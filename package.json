@@ -1,6 +1,7 @@
 {
-  "name": "task-management",
+  "name": "task-management-system",
   "version": "1.0.0",
+  "private": true,
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -11,6 +12,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.13.1",
   "devDependencies": {
+    "@types/node": "^24.1.0",
     "turbo": "^2.5.5",
     "typescript": "^5.9.2"
   },

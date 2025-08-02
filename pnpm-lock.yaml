@@ -12,6 +12,9 @@ importers:
         specifier: ^11.0.10
         version: 11.0.10(@types/node@24.1.0)
     devDependencies:
+      '@types/node':
+        specifier: ^24.1.0
+        version: 24.1.0
       turbo:
         specifier: ^2.5.5
         version: 2.5.5

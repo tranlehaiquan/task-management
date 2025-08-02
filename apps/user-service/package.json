@@ -9,6 +9,7 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
+    "dev": "nest start --watch",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
@@ -27,6 +28,7 @@
     "@task-mgmt/database": "workspace:*",
     "drizzle-orm": "^0.44.4",
     "reflect-metadata": "^0.2.2",
+    "@nestjs/config": "^4.0.2",
     "rxjs": "^7.8.2"
   },
   "devDependencies": {

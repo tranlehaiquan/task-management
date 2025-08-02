@@ -1,37 +1,50 @@
-import { Controller, Get, Post, Body, Param, Put, Delete } from '@nestjs/common';
+import { Controller } from '@nestjs/common';
+import { MessagePattern } from '@nestjs/microservices';
 import { UsersService } from './users.service';
 import type { NewUser, User } from '@task-mgmt/database';
 
-@Controller('users')
+@Controller()
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  async createUser(@Body() userData: NewUser): Promise<User> {
+  // Message patterns for microservice communication
+  @MessagePattern('user.create')
+  async createUserMessage(userData: NewUser): Promise<User> {
     return this.usersService.createUser(userData);
   }
 
-  @Get(':id')
-  async getUserById(@Param('id') id: string): Promise<User | null> {
+  @MessagePattern('user.findById')
+  async findUserByIdMessage(id: string): Promise<User | null> {
     return this.usersService.getUserById(id);
   }
 
-  @Get()
-  async getAllUsers(): Promise<User[]> {
+  @MessagePattern('user.findAll')
+  async findAllUsersMessage() {
     return this.usersService.getAllUsers();
   }
 
-  @Put(':id')
-  async updateUser(
-    @Param('id') id: string,
-    @Body() updates: Partial<NewUser>,
-  ): Promise<User | null> {
-    return this.usersService.updateUser(id, updates);
+  @MessagePattern('user.update')
+  async updateUserMessage(data: {
+    id: string;
+    updates: Partial<NewUser>;
+  }): Promise<User | null> {
+    return this.usersService.updateUser(data.id, data.updates);
   }
 
-  @Delete(':id')
-  async deleteUser(@Param('id') id: string): Promise<{ success: boolean }> {
+  @MessagePattern('user.delete')
+  async deleteUserMessage(id: string): Promise<{ success: boolean }> {
     const success = await this.usersService.deleteUser(id);
     return { success };
+  }
+
+  @MessagePattern('user.validate')
+  async validateUserMessage(
+    id: string,
+  ): Promise<{ exists: boolean; user?: User }> {
+    const user = await this.usersService.getUserById(id);
+    return {
+      exists: !!user,
+      user: user || undefined,
+    };
   }
 }

@@ -1,3 +1,3 @@
-export { db, type Database } from './connection';
-export * from './schema';
-export { dbConfig } from './config';
+export * from "./schema";
+export { DatabaseModule } from "./database.module";
+export { DatabaseService } from "./database.service";

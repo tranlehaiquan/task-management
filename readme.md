@@ -368,3 +368,110 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Happy Coding! 🚀**
 
 For questions or support, please open an issue or contact the development team.
+
+
+```mermaid
+erDiagram
+    users {
+        uuid id PK
+        varchar email UK
+        varchar password_hash
+        varchar name
+        varchar avatar_url
+        boolean is_active
+        boolean is_email_verified
+        timestamp last_login_at
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    teams {
+        uuid id PK
+        varchar name
+        text description
+        varchar slug UK
+        varchar avatar_url
+        jsonb settings
+        boolean is_active
+        uuid created_by FK
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    roles {
+        uuid id PK
+        varchar name
+        text description
+        role_scope scope
+        jsonb permissions
+        boolean is_system_role
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    team_memberships {
+        uuid id PK
+        uuid user_id FK
+        uuid team_id FK
+        uuid role_id FK
+        boolean is_active
+        timestamp joined_at
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    user_sessions {
+        uuid id PK
+        uuid user_id FK
+        varchar session_token UK
+        varchar refresh_token UK
+        jsonb device_info
+        inet ip_address
+        text user_agent
+        boolean is_active
+        timestamp expires_at
+        timestamp created_at
+        timestamp last_used_at
+    }
+    
+    user_preferences {
+        uuid id PK
+        uuid user_id FK
+        jsonb preferences
+        timestamp created_at
+        timestamp updated_at
+    }
+    
+    password_reset_tokens {
+        uuid id PK
+        uuid user_id FK
+        varchar token UK
+        timestamp expires_at
+        timestamp used_at
+        timestamp created_at
+    }
+    
+    email_verification_tokens {
+        uuid id PK
+        uuid user_id FK
+        varchar token UK
+        timestamp expires_at
+        timestamp verified_at
+        timestamp created_at
+    }
+
+    %% Relationships
+    users ||--o{ teams : "creates"
+    users ||--o{ team_memberships : "belongs to"
+    users ||--|| user_preferences : "has"
+    users ||--o{ user_sessions : "has"
+    users ||--o{ password_reset_tokens : "requests"
+    users ||--o{ email_verification_tokens : "verifies"
+    
+    teams ||--o{ team_memberships : "contains"
+    roles ||--o{ team_memberships : "defines"
+    
+    team_memberships }o--|| users : "user"
+    team_memberships }o--|| teams : "team"
+    team_memberships }o--|| roles : "role"
+```

@@ -1,35 +1,22 @@
-import { Injectable, OnModuleInit } from "@nestjs/common";
+import { Injectable, Inject, OnModuleInit } from "@nestjs/common";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import * as schema from "./schema";
+import { DB_OPTIONS, DBConfigType } from "./database.interface";
 
 @Injectable()
 export class DatabaseService implements OnModuleInit {
   private pool: Pool;
   public db: ReturnType<typeof drizzle>;
 
-  constructor() {
-    // TODO: move to config module
-    const dbConfig = {
-      host: process.env.DB_HOST || "localhost",
-      port: parseInt(process.env.DB_PORT || "5432"),
-      user: process.env.DB_USER || "postgres",
-      password: process.env.DB_PASSWORD || "postgres",
-      database: process.env.DB_NAME || "task_management",
-      ssl:
-        process.env.NODE_ENV === "production"
-          ? { rejectUnauthorized: false }
-          : false,
-    };
-
+  constructor(@Inject(DB_OPTIONS) private options: DBConfigType) {
     this.pool = new Pool({
-      connectionString: process.env.DATABASE_URL,
-      host: dbConfig.host,
-      port: dbConfig.port,
-      user: dbConfig.user,
-      password: dbConfig.password,
-      database: dbConfig.database,
-      ssl: dbConfig.ssl,
+      host: this.options.host,
+      port: this.options.port,
+      user: this.options.user,
+      password: this.options.password,
+      database: this.options.database,
+      ssl: this.options.ssl ? { rejectUnauthorized: false } : undefined,
     });
 
     this.db = drizzle(this.pool, { schema, logger: true });

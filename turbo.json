@@ -23,5 +23,6 @@
     "start": {
       "dependsOn": ["build"]
     }
-  }
+  },
+  "ui": "tui"
 }

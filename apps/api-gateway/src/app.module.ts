@@ -5,6 +5,7 @@ import { AppService } from './app.service';
 import { UsersModule } from './users/users.module';
 import { ConfigModule } from '@nestjs/config';
 import { PORTS } from '@task-mgmt/shared-config';
+import { AuthModule } from './auth/auth.module';
 
 @Global()
 @Module({
@@ -34,6 +35,7 @@ import { PORTS } from '@task-mgmt/shared-config';
       envFilePath: '.env',
     }),
     UsersModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

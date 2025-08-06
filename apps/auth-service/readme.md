@@ -4,7 +4,6 @@ This service is responsible for handling authentication and authorization for th
 
 ## Features
 
-- Login/logout
 - JWT token generation/validation
 - Password hashing/verification
 - Registration workflow

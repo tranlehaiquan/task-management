@@ -14,6 +14,98 @@ This project follows a microservices architecture pattern with the following cor
 - **Notification Service** - Real-time notifications, email alerts
 - **Web Client** - React frontend application
 
+### System Architecture Flow
+
+```mermaid
+graph TB
+    subgraph "External"
+        Client[📱 Client Applications]
+        Web[🌐 Web Browser]
+    end
+
+    subgraph "API Gateway Layer"
+        Gateway[🚪 API Gateway<br/>Port: 3000<br/>HTTP REST API]
+    end
+
+    subgraph "Microservices Layer"
+        UserSvc[👤 User Service<br/>Port: 3001<br/>TCP Microservice]
+        AuthSvc[🔐 Auth Service<br/>Port: 3002<br/>TCP Microservice]
+        ProjectSvc[📊 Project Service<br/>Port: 3003<br/>TCP Microservice]
+        TaskSvc[✅ Task Service<br/>Port: 3004<br/>TCP Microservice]
+        TimeSvc[⏱️ Time Tracking Service<br/>Port: 3005<br/>TCP Microservice]
+        NotifSvc[🔔 Notification Service<br/>Port: 3006<br/>TCP Microservice]
+    end
+
+    subgraph "Data Layer"
+        DB[(🗄️ PostgreSQL<br/>Database)]
+        Redis[(⚡ Redis<br/>Cache/Sessions)]
+    end
+
+    subgraph "Shared Packages"
+        Database[📦 Database Package<br/>Schema & Migrations]
+        Config[⚙️ Shared Config<br/>Ports & Settings]
+        Utils[🛠️ Shared Utils<br/>Common Functions]
+    end
+
+    %% Client connections
+    Client -->|HTTP/HTTPS| Gateway
+    Web -->|HTTP/HTTPS| Gateway
+
+    %% API Gateway to Services (TCP)
+    Gateway -.->|TCP Messages| UserSvc
+    Gateway -.->|TCP Messages| AuthSvc
+    Gateway -.->|TCP Messages| ProjectSvc
+    Gateway -.->|TCP Messages| TaskSvc
+    Gateway -.->|TCP Messages| TimeSvc
+    Gateway -.->|TCP Messages| NotifSvc
+
+    %% Services to Database
+    UserSvc -->|SQL Queries| DB
+    AuthSvc -->|SQL Queries| DB
+    ProjectSvc -->|SQL Queries| DB
+    TaskSvc -->|SQL Queries| DB
+    TimeSvc -->|SQL Queries| DB
+    NotifSvc -->|SQL Queries| DB
+
+    %% Services to Redis
+    AuthSvc -->|Sessions/Tokens| Redis
+    NotifSvc -->|Real-time Data| Redis
+    Gateway -->|Rate Limiting| Redis
+
+    %% Shared Dependencies
+    Gateway -.->|Import| Config
+    Gateway -.->|Import| Utils
+    UserSvc -.->|Import| Database
+    UserSvc -.->|Import| Config
+    AuthSvc -.->|Import| Database
+    AuthSvc -.->|Import| Config
+    ProjectSvc -.->|Import| Database
+    TaskSvc -.->|Import| Database
+    TimeSvc -.->|Import| Database
+    NotifSvc -.->|Import| Database
+
+    %% Styling
+    classDef client fill:#e1f5fe
+    classDef gateway fill:#f3e5f5
+    classDef service fill:#e8f5e8
+    classDef data fill:#fff3e0
+    classDef shared fill:#fce4ec
+
+    class Client,Web client
+    class Gateway gateway
+    class UserSvc,AuthSvc,ProjectSvc,TaskSvc,TimeSvc,NotifSvc service
+    class DB,Redis data
+    class Database,Config,Utils shared
+```
+
+### Communication Patterns
+
+- **HTTP REST API**: Client applications communicate with the API Gateway using standard HTTP/HTTPS
+- **TCP Microservices**: API Gateway communicates with backend services using NestJS TCP transport
+- **Message Patterns**: Services use pattern-based messaging (e.g., `user.create`, `auth.login`)
+- **Database Access**: Each service has direct access to PostgreSQL for data persistence
+- **Shared Packages**: Common functionality is shared through workspace packages
+
 ## 🛠️ Tech Stack
 
 ### Backend
@@ -369,7 +461,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 For questions or support, please open an issue or contact the development team.
 
-
 ```mermaid
 erDiagram
     users {
@@ -384,7 +475,7 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-    
+
     teams {
         uuid id PK
         varchar name
@@ -397,7 +488,7 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-    
+
     roles {
         uuid id PK
         varchar name
@@ -408,7 +499,7 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-    
+
     team_memberships {
         uuid id PK
         uuid user_id FK
@@ -419,7 +510,7 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-    
+
     user_sessions {
         uuid id PK
         uuid user_id FK
@@ -433,7 +524,7 @@ erDiagram
         timestamp created_at
         timestamp last_used_at
     }
-    
+
     user_preferences {
         uuid id PK
         uuid user_id FK
@@ -441,7 +532,7 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-    
+
     password_reset_tokens {
         uuid id PK
         uuid user_id FK
@@ -450,7 +541,7 @@ erDiagram
         timestamp used_at
         timestamp created_at
     }
-    
+
     email_verification_tokens {
         uuid id PK
         uuid user_id FK
@@ -467,10 +558,10 @@ erDiagram
     users ||--o{ user_sessions : "has"
     users ||--o{ password_reset_tokens : "requests"
     users ||--o{ email_verification_tokens : "verifies"
-    
+
     teams ||--o{ team_memberships : "contains"
     roles ||--o{ team_memberships : "defines"
-    
+
     team_memberships }o--|| users : "user"
     team_memberships }o--|| teams : "team"
     team_memberships }o--|| roles : "role"

@@ -7,6 +7,7 @@ import {
 } from '@task-mgmt/database';
 import { eq, and, ilike, type SQL } from 'drizzle-orm';
 import { PasswordUtils } from '../utils/password.utils';
+import { sanitizeUserData, sanitizeUsersData } from '../utils/user.utils';
 import { CreateNewUserDto } from './dto/createNewUser.dto';
 import { FindUserCriteria } from './dto/findUser.dto';
 
@@ -14,30 +15,38 @@ import { FindUserCriteria } from './dto/findUser.dto';
 export class UsersService {
   constructor(private readonly databaseService: DatabaseService) {}
 
-  async createUser(userData: CreateNewUserDto): Promise<User> {
+  async createUser(
+    userData: CreateNewUserDto,
+  ): Promise<Omit<User, 'passwordHash'>> {
     const passwordHash = await PasswordUtils.hashPassword(userData.password);
 
     const [user] = await this.databaseService.db
       .insert(users)
       .values({ ...userData, passwordHash })
       .returning();
-    return user;
+    return sanitizeUserData(user);
   }
 
-  async getUserById(id: string): Promise<User | null> {
-    return this.findUser({ id });
+  async getUserById(id: string): Promise<Omit<User, 'passwordHash'> | null> {
+    const user = await this.findUserInternal({ id });
+    return user ? sanitizeUserData(user) : null;
   }
 
-  async getUserByEmail(email: string): Promise<User | null> {
-    return this.findUser({ email });
+  async getUserByEmail(
+    email: string,
+  ): Promise<Omit<User, 'passwordHash'> | null> {
+    const user = await this.findUserInternal({ email });
+    return user ? sanitizeUserData(user) : null;
   }
 
   /**
-   * Find a single user based on flexible criteria
+   * Find a single user based on flexible criteria (internal method with full data)
    * @param criteria - The search criteria
    * @returns The first user that matches the criteria or null
    */
-  async findUser(criteria: FindUserCriteria): Promise<User | null> {
+  private async findUserInternal(
+    criteria: FindUserCriteria,
+  ): Promise<User | null> {
     const whereConditions = this.buildWhereConditions(criteria);
 
     if (whereConditions.length === 0) {
@@ -57,18 +66,32 @@ export class UsersService {
   }
 
   /**
+   * Find a single user based on flexible criteria (public method with sanitized data)
+   * @param criteria - The search criteria
+   * @returns The first user that matches the criteria or null
+   */
+  async findUser(
+    criteria: FindUserCriteria,
+  ): Promise<Omit<User, 'passwordHash'> | null> {
+    const user = await this.findUserInternal(criteria);
+    return user ? sanitizeUserData(user) : null;
+  }
+
+  /**
    * Find multiple users based on flexible criteria
    * @param criteria - The search criteria
    * @returns Array of users that match the criteria
    */
-  async findUsers(criteria: FindUserCriteria): Promise<User[]> {
+  async findUsers(
+    criteria: FindUserCriteria,
+  ): Promise<Omit<User, 'passwordHash'>[]> {
     const whereConditions = this.buildWhereConditions(criteria);
 
     if (whereConditions.length === 0) {
       return []; // No criteria provided
     }
 
-    return await this.databaseService.db
+    const userResults = await this.databaseService.db
       .select()
       .from(users)
       .where(
@@ -76,6 +99,8 @@ export class UsersService {
           ? whereConditions[0]
           : and(...whereConditions),
       );
+
+    return sanitizeUsersData(userResults);
   }
 
   /**
@@ -127,13 +152,13 @@ export class UsersService {
   async updateUser(
     id: string,
     updates: Partial<NewUser>,
-  ): Promise<User | null> {
+  ): Promise<Omit<User, 'passwordHash'> | null> {
     const [user] = await this.databaseService.db
       .update(users)
       .set({ ...updates, updatedAt: new Date() })
       .where(eq(users.id, id))
       .returning();
-    return user || null;
+    return user ? sanitizeUserData(user) : null;
   }
 
   async deleteUser(id: string): Promise<boolean> {
@@ -147,8 +172,8 @@ export class UsersService {
   async findUserByEmailAndPassword(
     email: string,
     password: string,
-  ): Promise<User | null> {
-    const user = await this.getUserByEmail(email);
+  ): Promise<Omit<User, 'passwordHash'> | null> {
+    const user = await this.findUserInternal({ email });
     if (!user) {
       return null;
     }
@@ -162,6 +187,6 @@ export class UsersService {
       return null;
     }
 
-    return user;
+    return sanitizeUserData(user);
   }
 }

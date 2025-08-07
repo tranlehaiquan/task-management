@@ -5,18 +5,21 @@ import type { NewUser, User } from '@task-mgmt/database';
 import { CreateNewUserDto } from './dto/createNewUser.dto';
 import type { FindUserCriteria } from './dto/findUser.dto';
 
+// Type for user data without passwordHash
+type SanitizedUser = Omit<User, 'passwordHash'>;
+
 @Controller()
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   // Message patterns for microservice communication
   @MessagePattern('user.create')
-  async createUserMessage(userData: CreateNewUserDto): Promise<User> {
+  async createUserMessage(userData: CreateNewUserDto): Promise<SanitizedUser> {
     return this.usersService.createUser(userData);
   }
 
   @MessagePattern('user.findById')
-  async findUserByIdMessage(id: string): Promise<User | null> {
+  async findUserByIdMessage(id: string): Promise<SanitizedUser | null> {
     return this.usersService.getUserById(id);
   }
 
@@ -26,17 +29,19 @@ export class UsersController {
   }
 
   @MessagePattern('user.findUserByEmail')
-  async findUserByEmailMessage(email: string): Promise<User | null> {
+  async findUserByEmailMessage(email: string): Promise<SanitizedUser | null> {
     return this.usersService.findUser({ email });
   }
 
   @MessagePattern('user.findUser')
-  async findUserMessage(criteria: FindUserCriteria): Promise<User | null> {
+  async findUserMessage(
+    criteria: FindUserCriteria,
+  ): Promise<SanitizedUser | null> {
     return this.usersService.findUser(criteria);
   }
 
   @MessagePattern('user.findUsers')
-  async findUsersMessage(criteria: FindUserCriteria): Promise<User[]> {
+  async findUsersMessage(criteria: FindUserCriteria): Promise<SanitizedUser[]> {
     return this.usersService.findUsers(criteria);
   }
 
@@ -44,7 +49,7 @@ export class UsersController {
   async updateUserMessage(data: {
     id: string;
     updates: Partial<NewUser>;
-  }): Promise<User | null> {
+  }): Promise<SanitizedUser | null> {
     return this.usersService.updateUser(data.id, data.updates);
   }
 
@@ -57,7 +62,7 @@ export class UsersController {
   @MessagePattern('user.validate')
   async validateUserMessage(
     id: string,
-  ): Promise<{ exists: boolean; user?: User }> {
+  ): Promise<{ exists: boolean; user?: SanitizedUser }> {
     const user = await this.usersService.getUserById(id);
     return {
       exists: !!user,
@@ -69,7 +74,7 @@ export class UsersController {
   async findUserByEmailAndPasswordMessage(data: {
     email: string;
     password: string;
-  }): Promise<User | null> {
+  }): Promise<SanitizedUser | null> {
     return this.usersService.findUserByEmailAndPassword(
       data.email,
       data.password,

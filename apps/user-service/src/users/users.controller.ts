@@ -2,6 +2,8 @@ import { Controller } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { UsersService } from './users.service';
 import type { NewUser, User } from '@task-mgmt/database';
+import { CreateNewUserDto } from './dto/createNewUser.dto';
+import type { FindUserCriteria } from './dto/findUser.dto';
 
 @Controller()
 export class UsersController {
@@ -9,7 +11,7 @@ export class UsersController {
 
   // Message patterns for microservice communication
   @MessagePattern('user.create')
-  async createUserMessage(userData: NewUser): Promise<User> {
+  async createUserMessage(userData: CreateNewUserDto): Promise<User> {
     return this.usersService.createUser(userData);
   }
 
@@ -21,6 +23,21 @@ export class UsersController {
   @MessagePattern('user.findAll')
   async findAllUsersMessage() {
     return this.usersService.getAllUsers();
+  }
+
+  @MessagePattern('user.findUserByEmail')
+  async findUserByEmailMessage(email: string): Promise<User | null> {
+    return this.usersService.findUser({ email });
+  }
+
+  @MessagePattern('user.findUser')
+  async findUserMessage(criteria: FindUserCriteria): Promise<User | null> {
+    return this.usersService.findUser(criteria);
+  }
+
+  @MessagePattern('user.findUsers')
+  async findUsersMessage(criteria: FindUserCriteria): Promise<User[]> {
+    return this.usersService.findUsers(criteria);
   }
 
   @MessagePattern('user.update')
@@ -46,5 +63,16 @@ export class UsersController {
       exists: !!user,
       user: user || undefined,
     };
+  }
+
+  @MessagePattern('user.findUserByEmailAndPassword')
+  async findUserByEmailAndPasswordMessage(data: {
+    email: string;
+    password: string;
+  }): Promise<User | null> {
+    return this.usersService.findUserByEmailAndPassword(
+      data.email,
+      data.password,
+    );
   }
 }

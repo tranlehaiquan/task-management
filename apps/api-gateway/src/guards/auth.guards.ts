@@ -9,21 +9,27 @@ export class AuthGuard implements CanActivate {
     @Inject('AUTH_SERVICE') private readonly authService: ClientProxy,
   ) {}
   
-  canActivate(
+  async canActivate(
     context: ExecutionContext,
-  ): boolean | Promise<boolean> | Observable<boolean> {
+  ): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
     if(!request?.headers?.authorization) {
       return false;
     }
     const [type, token] = (request?.headers?.authorization as string)?.split(' ');
     
-    if (type !== 'Bearer') {
+    if (type.toLowerCase() !== 'bearer') {
       return false;
     }
     
-    return firstValueFrom(
-      this.authService.send<boolean, string>('auth.validateToken', token),
-    );
+    try {
+      return await firstValueFrom(
+        this.authService.send<boolean, string>('auth.validateToken', token),
+      );
+    } catch (error) {
+      // Handle transport errors gracefully (e.g., auth service down or timeout)
+      // Return false to ensure client receives 401 instead of 500
+      return false;
+    }
   }
 }

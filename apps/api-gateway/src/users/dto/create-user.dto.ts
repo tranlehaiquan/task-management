@@ -30,7 +30,7 @@ export class CreateUserDto {
   })
   @IsString()
   @IsNotEmpty()
-  passwordHash: string;
+  password: string;
 
   @ApiProperty({
     description: 'User avatar URL',

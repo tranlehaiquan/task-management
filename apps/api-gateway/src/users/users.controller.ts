@@ -9,6 +9,7 @@ import {
   Inject,
   HttpException,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -16,6 +17,7 @@ import {
   ApiResponse,
   ApiParam,
   ApiBody,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -27,9 +29,12 @@ import {
   UserValidationResponseDto,
   DeleteUserResponseDto,
 } from './dto/user-response.dto';
+import { AuthGuard } from 'src/guards/auth.guards';
 
 @ApiTags('users')
 @Controller('api/users')
+@UseGuards(AuthGuard)
+@ApiBearerAuth('JWT-auth')
 export class UsersController {
   constructor(
     @Inject('USER_SERVICE') private readonly userService: ClientProxy,
@@ -45,7 +50,7 @@ export class UsersController {
         value: {
           email: 'john.doe@example.com',
           name: 'John Doe',
-          passwordHash: 'hashed_password_123',
+          password: 'password123',
         },
       },
     },
@@ -66,7 +71,7 @@ export class UsersController {
   async createUser(@Body() userData: CreateUserDto): Promise<User> {
     try {
       return await firstValueFrom(
-        this.userService.send<User, NewUser>('user.create', userData),
+        this.userService.send<User, CreateUserDto>('user.create', userData),
       );
     } catch (error) {
       throw new HttpException(

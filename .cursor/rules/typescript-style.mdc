@@ -1,0 +1,28 @@
+---
+globs: *.ts,*.tsx
+description: TypeScript style guide for this repository
+---
+
+# TypeScript Style
+
+- **Naming**
+  - Use descriptive names; avoid abbreviations.
+  - Functions are verbs; variables are nouns.
+- **Types**
+  - Explicitly annotate exported/public APIs (functions, classes, DTOs).
+  - Avoid `any` and unsafe casts; prefer precise types and generics.
+  - Prefer `unknown` over `any` for untyped inputs.
+- **Control flow**
+  - Use guard clauses; handle error and edge cases first.
+  - Avoid deep nesting beyond 2–3 levels.
+- **Comments**
+  - Comment "why", not "how". Keep comments concise and only for non-obvious logic.
+- **Formatting**
+  - Match existing formatting. Prefer multi-line over complex one-liners.
+  - Keep lines reasonably short and readable.
+- **Project specifics**
+  - Follow NestJS patterns for modules/controllers/services (see related rule).
+  - Keep business logic in services, not controllers.
+- **Imports**
+  - Use type-only imports where appropriate (e.g., `import type { X } from '...'`).
+  - Import shared code from published package entry points (e.g., database from [packages/database/src/index.ts](mdc:packages/database/src/index.ts)).

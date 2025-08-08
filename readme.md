@@ -205,9 +205,9 @@ task-management-system/
 
 ### Development URLs
 
-- **Web Client**: http://localhost:3000
-- **API Gateway**: http://localhost:3001
-- **API Documentation**: http://localhost:3001/api/docs
+- **Web client**: not yet
+- **API Gateway**: http://localhost:3000
+- **API Documentation**: http://localhost:3000/api/docs
 
 ## 📜 Available Scripts
 

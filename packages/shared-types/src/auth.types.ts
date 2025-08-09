@@ -1,7 +1,7 @@
 /**
  * JWT payload structure for user authentication
  * Contains only essential identifiers and standard JWT claims
- * 
+ *
  * Note: Keeps JWT minimal for performance and security
  * Full user profile data should be fetched separately via CurrentUser
  */
@@ -17,7 +17,7 @@ export type UserJWTPayload = {
 /**
  * Current authenticated user information with complete profile data
  * Used in request.user for authenticated routes (excludes sensitive data)
- * 
+ *
  * Note: Contains full user profile - fetched fresh from database on each request
  * to ensure data is current and not stale like JWT payload would be
  */

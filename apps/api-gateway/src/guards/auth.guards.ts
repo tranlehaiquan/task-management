@@ -9,12 +9,8 @@ import { firstValueFrom } from 'rxjs';
 import type { Request } from 'express';
 import { UserResponseDto } from 'src/users/dto/user-response.dto';
 
-declare global {
-  namespace Express {
-    interface Request {
-      user?: UserResponseDto;
-    }
-  }
+interface AuthenticatedRequest extends Request {
+  user?: UserResponseDto;
 }
 
 @Injectable()
@@ -24,7 +20,7 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     if (!request?.headers?.authorization) {
       return false;
     }

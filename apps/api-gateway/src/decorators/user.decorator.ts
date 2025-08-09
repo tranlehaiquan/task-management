@@ -1,4 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import type { Request } from 'express';
 
 export type UserJWTPayload = {
   id: string;
@@ -14,11 +15,15 @@ export type UserJWTPayload = {
   exp: number;
 };
 
+interface AuthenticatedRequest extends Request {
+  user?: UserJWTPayload;
+}
+
 export const CurrentUser = createParamDecorator(
   (data: unknown, ctx: ExecutionContext): UserJWTPayload | undefined => {
-    const request = ctx.switchToHttp().getRequest();
+    const request = ctx.switchToHttp().getRequest<AuthenticatedRequest>();
 
-    return request.user as UserJWTPayload;
+    return request.user;
   },
 );
 

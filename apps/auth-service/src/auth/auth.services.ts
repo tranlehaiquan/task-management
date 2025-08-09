@@ -19,7 +19,10 @@ export class AuthService {
 
   validateToken(token: string): object | null {
     try {
-      return jwt.verify(token, process.env.JWT_SECRET as string) as UserJWTPayload;
+      return jwt.verify(
+        token,
+        process.env.JWT_SECRET as string,
+      ) as UserJWTPayload;
     } catch {
       return null;
     }

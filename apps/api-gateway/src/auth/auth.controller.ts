@@ -6,7 +6,6 @@ import {
   Inject,
   Get,
   Post,
-  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -29,7 +28,10 @@ import {
 } from './dto/auth-response.dto';
 import { firstValueFrom } from 'rxjs';
 import { type User } from '@task-mgmt/database';
-import { CurrentUser, type UserJWTPayload } from 'src/decorators/user.decorator';
+import {
+  CurrentUser,
+  type UserJWTPayload,
+} from 'src/decorators/user.decorator';
 import { AuthGuard } from 'src/guards/auth.guards';
 import { UserResponseDto } from 'src/users/dto/user-response.dto';
 

@@ -190,7 +190,9 @@ export class UsersService {
     return sanitizeUserData(user);
   }
 
-  async updateLastLoginAt(id: string): Promise<Omit<User, 'passwordHash'> | null> {
+  async updateLastLoginAt(
+    id: string,
+  ): Promise<Omit<User, 'passwordHash'> | null> {
     const [user] = await this.databaseService.db
       .update(users)
       .set({ lastLoginAt: new Date(), updatedAt: new Date() })

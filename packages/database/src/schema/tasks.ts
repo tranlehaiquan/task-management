@@ -26,8 +26,8 @@ export const tasks = pgTable("tasks", {
   id: uuid("id").primaryKey().defaultRandom(),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
-  status: taskStatusEnum("status").default("todo"),
-  priority: taskPriorityEnum("priority").default("medium"),
+  status: taskStatusEnum("status").default("todo").notNull(),
+  priority: taskPriorityEnum("priority").default("medium").notNull(),
   projectId: uuid("project_id")
     .references(() => projects.id)
     .notNull(),
@@ -36,8 +36,8 @@ export const tasks = pgTable("tasks", {
     .references(() => users.id)
     .notNull(),
   dueDate: timestamp("due_date"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Task = typeof tasks.$inferSelect;

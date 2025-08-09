@@ -28,10 +28,8 @@ import {
 } from './dto/auth-response.dto';
 import { firstValueFrom } from 'rxjs';
 import { type User } from '@task-mgmt/database';
-import {
-  CurrentUser,
-  type UserJWTPayload,
-} from 'src/decorators/user.decorator';
+import { CurrentUser } from 'src/decorators/user.decorator';
+import type { UserJWTPayload } from '@task-mgmt/shared-types';
 import { AuthGuard } from 'src/guards/auth.guards';
 import { UserResponseDto } from 'src/users/dto/user-response.dto';
 

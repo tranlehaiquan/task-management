@@ -1,19 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import type { Request } from 'express';
-
-export type UserJWTPayload = {
-  id: string;
-  email: string;
-  name: string;
-  avatarUrl: string | null;
-  isActive: boolean;
-  isEmailVerified: boolean;
-  lastLoginAt: Date | null;
-  createdAt: Date;
-  updatedAt: Date;
-  iat: number;
-  exp: number;
-};
+import type { UserJWTPayload } from '@task-mgmt/shared-types';
 
 interface AuthenticatedRequest extends Request {
   user?: UserJWTPayload;

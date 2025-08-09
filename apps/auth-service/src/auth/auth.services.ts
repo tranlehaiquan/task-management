@@ -1,12 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
+import type { UserJWTPayload } from '@task-mgmt/shared-types';
 
 const defaultExpiresIn = 3600; // 1 hour
-
-export type UserJWTPayload = {
-  iat: number;
-  exp: number;
-};
 
 @Injectable()
 export class AuthService {

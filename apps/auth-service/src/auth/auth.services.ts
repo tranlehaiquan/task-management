@@ -3,6 +3,11 @@ import * as jwt from 'jsonwebtoken';
 
 const defaultExpiresIn = 3600; // 1 hour
 
+export type UserJWTPayload = {
+  iat: number;
+  exp: number;
+};
+
 @Injectable()
 export class AuthService {
   // features:
@@ -14,7 +19,7 @@ export class AuthService {
 
   validateToken(token: string): object | null {
     try {
-      return jwt.verify(token, process.env.JWT_SECRET as string) as object;
+      return jwt.verify(token, process.env.JWT_SECRET as string) as UserJWTPayload;
     } catch {
       return null;
     }

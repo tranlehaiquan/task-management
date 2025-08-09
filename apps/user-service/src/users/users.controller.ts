@@ -80,4 +80,9 @@ export class UsersController {
       data.password,
     );
   }
+
+  @MessagePattern('user.updateLastLoginAt')
+  async updateLastLoginAtMessage(id: string): Promise<SanitizedUser | null> {
+    return this.usersService.updateLastLoginAt(id);
+  }
 }

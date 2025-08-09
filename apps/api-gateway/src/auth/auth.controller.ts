@@ -4,7 +4,10 @@ import {
   HttpException,
   HttpStatus,
   Inject,
+  Get,
   Post,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
@@ -15,6 +18,7 @@ import {
   ApiBadRequestResponse,
   ApiConflictResponse,
   ApiInternalServerErrorResponse,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import LoginDto from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -24,7 +28,10 @@ import {
   ConflictErrorResponseDto,
 } from './dto/auth-response.dto';
 import { firstValueFrom } from 'rxjs';
-import { User } from '@task-mgmt/database';
+import { type User } from '@task-mgmt/database';
+import { CurrentUser, type UserJWTPayload } from 'src/decorators/user.decorator';
+import { AuthGuard } from 'src/guards/auth.guards';
+import { UserResponseDto } from 'src/users/dto/user-response.dto';
 
 @ApiTags('Authentication')
 @Controller('api/auth')
@@ -73,6 +80,11 @@ export class AuthController {
         HttpStatus.BAD_REQUEST,
       );
     }
+
+    // Update lastLoginAt timestamp
+    await firstValueFrom(
+      this.userService.send<User, string>('user.updateLastLoginAt', user.id),
+    );
 
     const token = await firstValueFrom(
       this.authService.send<string, User>('auth.generateToken', user),
@@ -136,5 +148,25 @@ export class AuthController {
       token,
       user: newUser,
     };
+  }
+
+  @Get('me')
+  @UseGuards(AuthGuard)
+  @ApiOperation({
+    summary: 'Get current user',
+    description: 'Get the current user information',
+  })
+  @ApiResponse({
+    status: 200,
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Internal server error',
+    type: ErrorResponseDto,
+  })
+  @ApiBearerAuth('JWT-auth')
+  async me(@CurrentUser() user: UserJWTPayload) {
+    return await firstValueFrom(
+      this.userService.send<UserResponseDto, string>('user.findById', user.id),
+    );
   }
 }

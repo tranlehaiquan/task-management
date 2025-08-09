@@ -7,6 +7,15 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import type { Request } from 'express';
+import { UserResponseDto } from 'src/users/dto/user-response.dto';
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: UserResponseDto;
+    }
+  }
+}
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -26,9 +35,15 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      return await firstValueFrom(
-        this.authService.send<boolean, string>('auth.validateToken', token),
+      const user = await firstValueFrom(
+        this.authService.send<UserResponseDto, string>(
+          'auth.validateToken',
+          token,
+        ),
       );
+
+      request.user = user;
+      return !!user;
     } catch {
       return false;
     }

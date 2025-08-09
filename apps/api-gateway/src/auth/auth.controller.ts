@@ -163,7 +163,7 @@ export class AuthController {
     type: ErrorResponseDto,
   })
   @ApiBearerAuth('JWT-auth')
-  async me(@CurrentUser() user: CurrentUserType) {
+  me(@CurrentUser() user: CurrentUserType) {
     return user;
   }
 }

@@ -12,10 +12,13 @@ description: Shared types and authentication patterns across microservices
 
 ### Key Types:
 
-- `UserJWTPayload` - Complete JWT token payload with user profile + JWT claims (`iat`, `exp`)
-- `CurrentUser` - Sanitized user data for `request.user` (excludes JWT-specific fields)
+- `UserJWTPayload` - **Minimal JWT payload** with only essential claims (`id`, `iat`, `exp`)
+- `CurrentUser` - **Complete user profile** data fetched fresh from database
 
-**Important**: User timestamps use ISO 8601 strings (e.g., "2024-01-15T10:30:00.000Z") for readability. JWT claims (iat, exp) remain as epoch seconds per standard.
+**Important**: 
+- JWT payloads are kept minimal for performance and security
+- User profile data is fetched separately to avoid staleness
+- User timestamps use ISO 8601 strings; JWT claims use epoch seconds
 
 ## Authentication Flow (API Gateway)
 
@@ -24,8 +27,8 @@ description: Shared types and authentication patterns across microservices
 **Location**: [apps/api-gateway/src/guards/auth.guards.ts](mdc:apps/api-gateway/src/guards/auth.guards.ts)
 
 **Two-step flow**:
-1. **JWT Validation**: Call `AUTH_SERVICE.auth.validateToken` → returns `UserJWTPayload | null`
-2. **User Data Fetch**: Call `USER_SERVICE.user.findById(payload.id)` → returns `CurrentUser | null`
+1. **JWT Validation**: Call `AUTH_SERVICE.auth.validateToken` → returns `UserJWTPayload | null` (minimal: id, iat, exp)
+2. **User Data Fetch**: Call `USER_SERVICE.user.findById(payload.id)` → returns `CurrentUser | null` (full profile)
 
 **Constructor Dependencies**:
 ```typescript
@@ -54,8 +57,9 @@ async endpoint(@CurrentUser() user: CurrentUserType) {
 - **Import Pattern**: Always use `import type { ... } from '@task-mgmt/shared-types'` for type-only imports
 - **Auth Guard**: Must inject both AUTH_SERVICE and USER_SERVICE for proper separation of concerns
 - **Type Usage**: 
-  - Use `UserJWTPayload` for JWT token validation
-  - Use `CurrentUser` for request.user and @CurrentUser() decorator
+  - Use `UserJWTPayload` for JWT token validation (minimal payload)
+  - Use `CurrentUser` for request.user and @CurrentUser() decorator (full profile)
+  - **Never include profile data in JWT** - keep tokens minimal
 - **Timestamp Handling**: User timestamps use ISO 8601 strings for readability
   - Convert Date to string: `date.toISOString()`
   - Convert string to Date: `new Date(isoString)`

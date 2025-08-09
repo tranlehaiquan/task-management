@@ -25,4 +25,9 @@ description: TypeScript style guide for this repository
   - Keep business logic in services, not controllers.
 - **Imports**
   - Use type-only imports where appropriate (e.g., `import type { X } from '...'`).
-  - Import shared code from published package entry points (e.g., database from [packages/database/src/index.ts](mdc:packages/database/src/index.ts)).
+  - Import shared code from published package entry points:
+    - Database: `from '@task-mgmt/database'` ([packages/database/src/index.ts](mdc:packages/database/src/index.ts))
+    - Types: `from '@task-mgmt/shared-types'` ([packages/shared-types/src/index.ts](mdc:packages/shared-types/src/index.ts))
+    - Config: `from '@task-mgmt/shared-config'` ([packages/shared-config/src/index.ts](mdc:packages/shared-config/src/index.ts))
+  - **Never duplicate types**: Always import `UserJWTPayload`, `CurrentUser` from shared-types package
+  - Prefer workspace package imports over relative paths for shared code

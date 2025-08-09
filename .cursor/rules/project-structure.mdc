@@ -22,6 +22,7 @@ This repository is a pnpm + Turborepo monorepo with multiple NestJS apps and sha
 
   - Database (Drizzle + Postgres): [packages/database/src/index.ts](mdc:packages/database/src/index.ts), [packages/database/src/database.module.ts](mdc:packages/database/src/database.module.ts), [packages/database/src/database.service.ts](mdc:packages/database/src/database.service.ts), [packages/database/src/schema/index.ts](mdc:packages/database/src/schema/index.ts), [packages/database/drizzle.config.ts](mdc:packages/database/drizzle.config.ts)
   - Shared config: [packages/shared-config/src/index.ts](mdc:packages/shared-config/src/index.ts)
+  - Shared types: [packages/shared-types/src/index.ts](mdc:packages/shared-types/src/index.ts), [packages/shared-types/src/auth.types.ts](mdc:packages/shared-types/src/auth.types.ts)
   - Shared utils/package: [packages/shared-utils/README.md](mdc:packages/shared-utils/README.md), [packages/shared-package/README.md](mdc:packages/shared-package/README.md)
 
 - Typical NestJS layout per app: `app.module.ts`, controllers under feature folders (e.g., `users/users.controller.ts`), DTOs under `dto/`, services under `*.service.ts`, optional `guards/` and `middleware/`.

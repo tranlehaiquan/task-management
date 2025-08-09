@@ -7,15 +7,21 @@ import {
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import type { Request } from 'express';
+import type { CurrentUser, UserJWTPayload } from '@task-mgmt/shared-types';
+
+interface AuthenticatedRequest extends Request {
+  user?: CurrentUser;
+}
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
     @Inject('AUTH_SERVICE') private readonly authService: ClientProxy,
+    @Inject('USER_SERVICE') private readonly userService: ClientProxy,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     if (!request?.headers?.authorization) {
       return false;
     }
@@ -26,9 +32,34 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      return await firstValueFrom(
-        this.authService.send<boolean, string>('auth.validateToken', token),
+      // Step 1: Validate the JWT token and get the payload
+      const jwtPayload = await firstValueFrom(
+        this.authService.send<UserJWTPayload | null, string>(
+          'auth.validateToken',
+          token,
+        ),
       );
+
+      if (!jwtPayload || !jwtPayload.id) {
+        return false;
+      }
+
+      // Step 2: Fetch the full user data from USER_SERVICE using the ID from JWT
+      const userData = await firstValueFrom(
+        this.userService.send<CurrentUser | null, string>(
+          'user.findById',
+          jwtPayload.id,
+        ),
+      );
+
+      // TODO: add !userData.isActive condition latter
+      if (!userData) {
+        return false;
+      }
+
+      // Step 3: Attach sanitized user object to request
+      request.user = userData;
+      return true;
     } catch {
       return false;
     }

@@ -20,3 +20,16 @@ Guidelines:
 - Validate inputs via DTOs. Keep transformations and validation close to DTO definitions.
 - Use guard clauses and early returns in handlers/services for readability.
 - Keep feature code colocated within the app; share only via `packages/*` if reusable.
+
+### Microservice Communication
+
+- Use `@Inject('SERVICE_NAME')` with `ClientProxy` for inter-service communication
+- **Auth Guard Pattern**: Must inject both AUTH_SERVICE and USER_SERVICE for proper auth flow
+- Follow two-step authentication: JWT validation → user data fetch
+- Use shared types from `@task-mgmt/shared-types` for consistent contracts
+
+### Decorators & Guards
+
+- **@CurrentUser()**: Use `CurrentUser` type from shared-types (sanitized user data)
+- **AuthGuard**: Place in `guards/` and implement proper service separation
+- Import shared types, never define authentication types locally

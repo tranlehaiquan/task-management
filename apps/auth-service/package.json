@@ -28,6 +28,7 @@
     "@nestjs/platform-express": "^11.1.6",
     "@task-mgmt/database": "workspace:*",
     "@task-mgmt/shared-config": "workspace:*",
+    "@task-mgmt/shared-types": "workspace:*",
     "@types/jsonwebtoken": "^9.0.10",
     "drizzle-orm": "^0.44.4",
     "jsonwebtoken": "^9.0.2",

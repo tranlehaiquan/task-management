@@ -51,6 +51,9 @@ importers:
       '@task-mgmt/shared-config':
         specifier: workspace:*
         version: link:../../packages/shared-config
+      '@task-mgmt/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
       class-transformer:
         specifier: ^0.5.1
         version: 0.5.1
@@ -163,6 +166,9 @@ importers:
       '@task-mgmt/shared-config':
         specifier: workspace:*
         version: link:../../packages/shared-config
+      '@task-mgmt/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
       '@types/jsonwebtoken':
         specifier: ^9.0.10
         version: 9.0.10
@@ -853,6 +859,36 @@ importers:
         version: 8.39.0(eslint@9.32.0)(typescript@5.9.2)
 
   packages/shared-package: {}
+
+  packages/shared-types:
+    devDependencies:
+      '@eslint/js':
+        specifier: ^9.18.0
+        version: 9.32.0
+      '@types/node':
+        specifier: ^22.10.7
+        version: 22.17.0
+      eslint:
+        specifier: ^9.18.0
+        version: 9.32.0
+      eslint-config-prettier:
+        specifier: ^10.0.1
+        version: 10.1.8(eslint@9.32.0)
+      eslint-plugin-prettier:
+        specifier: ^5.5.4
+        version: 5.5.4(@types/eslint@9.6.1)(eslint-config-prettier@10.1.8(eslint@9.32.0))(eslint@9.32.0)(prettier@3.6.2)
+      globals:
+        specifier: ^16.0.0
+        version: 16.3.0
+      prettier:
+        specifier: ^3.4.2
+        version: 3.6.2
+      typescript:
+        specifier: ^5.7.3
+        version: 5.9.2
+      typescript-eslint:
+        specifier: ^8.39.0
+        version: 8.39.0(eslint@9.32.0)(typescript@5.9.2)
 
   packages/shared-utils: {}
 

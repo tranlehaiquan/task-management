@@ -29,9 +29,8 @@ import {
 import { firstValueFrom } from 'rxjs';
 import { type User } from '@task-mgmt/database';
 import { CurrentUser } from 'src/decorators/user.decorator';
-import type { UserJWTPayload } from '@task-mgmt/shared-types';
+import type { CurrentUser as CurrentUserType } from '@task-mgmt/shared-types';
 import { AuthGuard } from 'src/guards/auth.guards';
-import { UserResponseDto } from 'src/users/dto/user-response.dto';
 
 @ApiTags('Authentication')
 @Controller('api/auth')
@@ -164,9 +163,7 @@ export class AuthController {
     type: ErrorResponseDto,
   })
   @ApiBearerAuth('JWT-auth')
-  async me(@CurrentUser() user: UserJWTPayload) {
-    return await firstValueFrom(
-      this.userService.send<UserResponseDto, string>('user.findById', user.id),
-    );
+  async me(@CurrentUser() user: CurrentUserType) {
+    return user;
   }
 }

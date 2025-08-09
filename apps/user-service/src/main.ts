@@ -20,4 +20,4 @@ async function bootstrap() {
   logger.log(`Running on port ${port}`);
   await app.listen();
 }
-bootstrap();
+void bootstrap();

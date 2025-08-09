@@ -73,7 +73,7 @@ export class UsersController {
       return await firstValueFrom(
         this.userService.send<User, CreateUserDto>('user.create', userData),
       );
-    } catch (error) {
+    } catch {
       throw new HttpException(
         'Failed to create user',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -106,7 +106,7 @@ export class UsersController {
       return await firstValueFrom(
         this.userService.send<User | null, string>('user.findById', id),
       );
-    } catch (error) {
+    } catch {
       throw new HttpException(
         'Failed to fetch user',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -130,7 +130,7 @@ export class UsersController {
       return await firstValueFrom(
         this.userService.send<User[]>('user.findAll', {}),
       );
-    } catch (error) {
+    } catch {
       throw new HttpException(
         'Failed to fetch users',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -190,7 +190,7 @@ export class UsersController {
           { id: string; updates: Partial<NewUser> }
         >('user.update', { id, updates }),
       );
-    } catch (error) {
+    } catch {
       throw new HttpException(
         'Failed to update user',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -223,7 +223,7 @@ export class UsersController {
       return await firstValueFrom(
         this.userService.send<{ success: boolean }, string>('user.delete', id),
       );
-    } catch (error) {
+    } catch {
       throw new HttpException(
         'Failed to delete user',
         HttpStatus.INTERNAL_SERVER_ERROR,
@@ -257,7 +257,7 @@ export class UsersController {
           id,
         ),
       );
-    } catch (error) {
+    } catch {
       throw new HttpException(
         'Failed to validate user',
         HttpStatus.INTERNAL_SERVER_ERROR,

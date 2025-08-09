@@ -12,10 +12,10 @@ export class AuthService {
     return jwt.sign(payload, process.env.JWT_SECRET as string, { expiresIn });
   }
 
-  validateToken(token: string): any | null {
+  validateToken(token: string): object | null {
     try {
-      return jwt.verify(token, process.env.JWT_SECRET as string);
-    } catch (error) {
+      return jwt.verify(token, process.env.JWT_SECRET as string) as object;
+    } catch {
       return null;
     }
   }

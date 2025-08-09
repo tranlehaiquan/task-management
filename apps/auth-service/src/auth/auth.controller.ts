@@ -12,7 +12,7 @@ export class AuthController {
   }
 
   @MessagePattern('auth.validateToken')
-  validateToken(token: string): any | null {
+  validateToken(token: string): object | null {
     return this.authService.validateToken(token);
   }
 }

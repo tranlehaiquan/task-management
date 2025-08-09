@@ -75,7 +75,7 @@ export class AuthController {
     }
 
     const token = await firstValueFrom(
-      this.authService.send('auth.generateToken', user),
+      this.authService.send<string, User>('auth.generateToken', user),
     );
 
     return {
@@ -125,11 +125,11 @@ export class AuthController {
     }
 
     const newUser = await firstValueFrom(
-      this.userService.send('user.create', registerDto),
+      this.userService.send<User, RegisterDto>('user.create', registerDto),
     );
 
     const token = await firstValueFrom(
-      this.authService.send('auth.generateToken', newUser),
+      this.authService.send<string, User>('auth.generateToken', newUser),
     );
 
     return {

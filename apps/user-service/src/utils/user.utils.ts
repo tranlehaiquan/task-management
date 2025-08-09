@@ -6,7 +6,8 @@ import type { User } from '@task-mgmt/database';
  * @returns The user object without passwordHash
  */
 export function sanitizeUserData(user: User): Omit<User, 'passwordHash'> {
-  const { passwordHash, ...sanitizedUser } = user;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { passwordHash: _, ...sanitizedUser } = user;
   return sanitizedUser;
 }
 

@@ -80,10 +80,11 @@ export class AuthController {
       );
     }
 
-    // Update lastLoginAt timestamp
-    await firstValueFrom(
-      this.userService.send<User, string>('user.updateLastLoginAt', user.id),
-    );
+    // Update lastLoginAt timestamp (fire-and-forget)
+    this.userService.emit<unknown, string>('user.updateLastLoginAt', user.id);
+
+    // Update lastLoginAt in response immediately for consistency
+    user.lastLoginAt = new Date();
 
     const token = await firstValueFrom(
       this.authService.send<string, User>('auth.generateToken', user),

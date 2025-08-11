@@ -1,6 +1,26 @@
 # Task Management System
 
+- User Management Service: Teams, roles, permissions
+- Project Service: Project CRUD, workspace management
+- Task Service: Task lifecycle, assignments, dependencies
+- Time Tracking Service: Work logs, reporting
+- File Storage Service: Document management, version control
+
 A modern, scalable task management platform built with microservices architecture using NestJS, pnpm workspaces, and Turbo for optimal development experience.
+
+## 🎯 Current Status
+
+**Foundation Phase Complete ✅** - The core infrastructure is fully implemented and ready for development:
+
+- 🏗️ **Monorepo Structure**: Complete pnpm + Turbo setup with 6 microservices
+- 🛡️ **Authentication System**: JWT-based auth service with user management
+- 🗄️ **Database Layer**: PostgreSQL with Drizzle ORM, complete schema design
+- 🌐 **API Gateway**: HTTP REST API with Swagger docs, microservice routing
+- 🔗 **Service Communication**: TCP-based microservice messaging
+- 📝 **Type Safety**: Full TypeScript support with shared types across services
+- 🧪 **Testing Ready**: Jest scaffolding and e2e test setup for all services
+
+**Ready to build core business features**: Project management, task CRUD, and frontend integration.
 
 ## 🏗️ Architecture
 
@@ -28,12 +48,12 @@ graph TB
     end
 
     subgraph "Microservices Layer"
-        UserSvc[👤 User Service<br/>Port: 3001<br/>TCP Microservice]
-        AuthSvc[🔐 Auth Service<br/>Port: 3002<br/>TCP Microservice]
-        ProjectSvc[📊 Project Service<br/>Port: 3003<br/>TCP Microservice]
-        TaskSvc[✅ Task Service<br/>Port: 3004<br/>TCP Microservice]
-        TimeSvc[⏱️ Time Tracking Service<br/>Port: 3005<br/>TCP Microservice]
-        NotifSvc[🔔 Notification Service<br/>Port: 3006<br/>TCP Microservice]
+        UserSvc[👤 User Service<br/>Port: 3001<br/>TCP Microservice ✅]
+        AuthSvc[🔐 Auth Service<br/>Port: 3002<br/>TCP Microservice ✅]
+        ProjectSvc[📊 Project Service<br/>Port: 3003<br/>TCP Microservice 🚧]
+        TaskSvc[✅ Task Service<br/>Port: 3004<br/>TCP Microservice 🚧]
+        TimeSvc[⏱️ Time Tracking Service<br/>Port: 3005<br/>TCP Microservice 🚧]
+        NotifSvc[🔔 Notification Service<br/>Port: 3006<br/>TCP Microservice 🚧]
     end
 
     subgraph "Data Layer"
@@ -111,10 +131,11 @@ graph TB
 ### Backend
 
 - **Framework**: NestJS with TypeScript
-- **Database**: PostgreSQL with TypeORM
-- **Cache/Message Broker**: Redis
+- **Database**: PostgreSQL with Drizzle ORM
+- **Cache/Message Broker**: Redis (planned)
 - **Authentication**: JWT tokens
 - **API Documentation**: Swagger/OpenAPI
+- **Communication**: TCP-based microservices
 
 ### Frontend
 
@@ -133,30 +154,27 @@ graph TB
 ## 📁 Project Structure
 
 ```
-task-management-system/
+task-management/
 ├── apps/                          # Runnable applications
-│   ├── api-gateway/              # Main API gateway
-│   ├── user-service/             # User management
-│   ├── project-service/          # Project management
-│   ├── task-service/             # Task management
-│   ├── time-tracking-service/    # Time tracking
-│   ├── notification-service/     # Notifications
-│   └── web-client/               # React frontend
+│   ├── api-gateway/              # Main API gateway ✅
+│   ├── auth-service/             # Authentication service ✅
+│   ├── user-service/             # User management ✅
+│   ├── project-service/          # Project management (scaffolded)
+│   ├── task-service/             # Task management (scaffolded)
+│   ├── time-tracking-service/    # Time tracking (scaffolded)
+│   ├── notification-service/     # Notifications (scaffolded)
+│   └── web-client/               # React frontend (planned)
 │
 ├── packages/                      # Shared packages
-│   ├── shared-types/             # TypeScript interfaces
-│   ├── shared-config/            # Configuration utilities
-│   ├── shared-utils/             # Common utilities
-│   ├── event-bus/                # Event handling system
-│   └── database/                 # Database utilities
+│   ├── database/                 # Drizzle ORM + PostgreSQL schemas ✅
+│   ├── shared-types/             # TypeScript interfaces ✅
+│   ├── shared-config/            # Configuration utilities ✅
+│   ├── shared-utils/             # Common utilities (scaffolded)
+│   └── shared-package/           # Additional utilities (scaffolded)
 │
-├── tools/                        # Development tools
-│   ├── scripts/                  # Setup and utility scripts
-│   └── docker/                   # Docker configurations
-│
-├── docker-compose.yml            # Development environment
-├── turbo.json                    # Turbo configuration
-└── pnpm-workspace.yaml          # Workspace configuration
+├── docker-compose.yml            # Development environment (planned)
+├── turbo.json                    # Turbo configuration ✅
+└── pnpm-workspace.yaml          # Workspace configuration ✅
 ```
 
 ## 🚀 Quick Start
@@ -205,9 +223,31 @@ task-management-system/
 
 ### Development URLs
 
-- **Web client**: not yet
 - **API Gateway**: http://localhost:3000
 - **API Documentation**: http://localhost:3000/api/docs
+- **User Service**: TCP microservice on port 3001
+- **Auth Service**: TCP microservice on port 3002
+- **Web Client**: Not yet implemented
+
+### Available API Endpoints
+
+The API Gateway currently provides these working endpoints:
+
+**Authentication:**
+
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+- `POST /api/auth/forgot-password` - Password reset request
+
+**User Management:**
+
+- `GET /api/users` - List all users (protected)
+- `POST /api/users` - Create new user
+- `GET /api/users/:id` - Get user by ID
+- `PUT /api/users/:id` - Update user
+- `DELETE /api/users/:id` - Delete user
+
+All endpoints include comprehensive Swagger documentation with examples and validation rules.
 
 ## 📜 Available Scripts
 
@@ -351,38 +391,62 @@ pnpm test:e2e
 
 ## 🚦 API Documentation
 
-Each service exposes Swagger documentation:
+The API Gateway exposes comprehensive Swagger documentation:
 
-- **API Gateway**: http://localhost:3001/api/docs
-- **User Service**: http://localhost:3002/api/docs
-- **Project Service**: http://localhost:3003/api/docs
-- **Task Service**: http://localhost:3004/api/docs
+- **API Gateway**: http://localhost:3000/api/docs
+
+Individual microservices communicate via TCP and don't expose HTTP endpoints directly. All API documentation is centralized through the API Gateway.
 
 ## 🛣️ Roadmap
 
-### Phase 1: Core Features (Current)
+### Phase 1: Foundation & Core Infrastructure ✅ (COMPLETED)
 
-- [x] Project setup with pnpm + Turbo
-- [ ] User authentication and management
-- [ ] Basic project and task CRUD
-- [ ] API Gateway with routing
-- [ ] React frontend with basic UI
+- [x] **Monorepo Setup**: pnpm + Turbo with workspace configuration
+- [x] **Database Infrastructure**: PostgreSQL with Drizzle ORM, complete schema for users, projects, tasks, time_entries, notifications
+- [x] **Shared Packages**: Database package with type-safe schema, shared-config with service ports, shared-types with auth types
+- [x] **API Gateway**: HTTP REST API with Swagger documentation, CORS, validation, JWT auth setup
+- [x] **Auth Service**: JWT token generation/validation microservice with TCP communication
+- [x] **User Service**: Complete CRUD operations with password hashing, user validation, TCP microservice communication
+- [x] **Service Communication**: TCP-based microservice architecture with message patterns
+- [x] **Type Safety**: Full TypeScript support across all services with shared types
+- [x] **Development Tools**: ESLint, Prettier, Jest testing scaffolding, e2e test setup
 
-### Phase 2: Enhanced Features
+### Phase 2: Core Business Features (CURRENT)
 
-- [ ] Real-time notifications
-- [ ] Time tracking functionality
-- [ ] Advanced task features (dependencies, subtasks)
-- [ ] File attachments
-- [ ] Team collaboration features
+- [ ] **Project Service**: Project CRUD operations, ownership management, project-user relationships
+- [ ] **Task Service**: Task lifecycle management, assignments, status tracking, priority system
+- [ ] **API Gateway Integration**: Complete proxy layer for all services with authentication guards
+- [ ] **Docker Compose**: Development environment with PostgreSQL, Redis, all services
+- [ ] **Database Migrations**: Production-ready migration system and seeding
+- [ ] **Email Service**: Email notifications and SMTP server integration
+- [ ] **Environment Configuration**: Complete .env setup and documentation
 
-### Phase 3: Advanced Features
+### Phase 3: Enhanced Features & UI
 
-- [ ] Analytics and reporting
-- [ ] Mobile app (React Native)
-- [ ] Advanced search and filtering
-- [ ] Workflow automation
-- [ ] Third-party integrations
+- [ ] **React Frontend**: Modern web client with TypeScript, Vite, Tailwind CSS
+- [ ] **Time Tracking Service**: Work logging, timer functionality, reports
+- [ ] **Notification Service**: Real-time notifications with WebSocket/SSE, email alerts
+- [ ] **Advanced Task Features**: Task dependencies, subtasks, task templates
+- [ ] **File Attachments**: File upload/download system for tasks and projects
+- [ ] **Team Collaboration**: Team memberships, role-based permissions, activity feeds
+
+### Phase 4: Advanced Features & Optimization
+
+- [ ] **Analytics & Reporting**: Dashboards, time reports, productivity metrics
+- [ ] **Search & Filtering**: Advanced search across projects/tasks, filtering, sorting
+- [ ] **Workflow Automation**: Task automation rules, notifications, status transitions
+- [ ] **API Rate Limiting**: Redis-based rate limiting and caching
+- [ ] **Monitoring & Observability**: Prometheus, Grafana, structured logging
+- [ ] **Performance Optimization**: Query optimization, caching strategies, load testing
+
+### Phase 5: Platform & Integrations
+
+- [ ] **Mobile App**: React Native application for iOS/Android
+- [ ] **Third-party Integrations**: Slack, GitHub, calendar integrations
+- [ ] **Advanced Security**: RBAC refinement, audit logging, security headers
+- [ ] **Deployment & DevOps**: CI/CD pipelines, container orchestration, staging environments
+- [ ] **API Versioning**: Backward compatibility, API versioning strategy
+- [ ] **Scalability**: Horizontal scaling, microservice resilience patterns
 
 ## 🤝 Contributing
 
@@ -405,19 +469,28 @@ Each service exposes Swagger documentation:
 ### Required Environment Variables
 
 ```bash
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/taskdb
-REDIS_URL=redis://localhost:6379
+# Database (Drizzle ORM)
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=your_password
+DB_NAME=task_management
+DB_SSL=false
 
-# JWT
+# JWT Authentication
 JWT_SECRET=your-super-secret-jwt-key
-JWT_EXPIRES_IN=24h
 
-# Services
-API_GATEWAY_PORT=3001
-USER_SERVICE_PORT=3002
+# Services (TCP Microservices)
+API_GATEWAY_PORT=3000
+USER_SERVICE_PORT=3001
+AUTH_SERVICE_PORT=3002
 PROJECT_SERVICE_PORT=3003
 TASK_SERVICE_PORT=3004
+TIME_TRACKING_SERVICE_PORT=3005
+NOTIFICATION_SERVICE_PORT=3006
+
+# Development
+NODE_ENV=development
 ```
 
 See `.env.example` for complete configuration options.

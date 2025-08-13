@@ -167,4 +167,22 @@ export class AuthController {
   me(@CurrentUser() user: CurrentUserType) {
     return user;
   }
+
+  @Post('verify-email')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  async verifyEmail(@CurrentUser() user: CurrentUserType) {
+    return await firstValueFrom(
+      this.userService.send('user.verifyEmail', { userId: user.id }),
+    );
+  }
+
+  @Post('resend-verification')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  async resendVerification(@CurrentUser() user: CurrentUserType) {
+    return await firstValueFrom(
+      this.userService.send('user.resendVerification', { userId: user.id }),
+    );
+  }
 }

@@ -1,11 +1,16 @@
-import { Injectable, Inject, OnModuleInit } from "@nestjs/common";
+import {
+  Injectable,
+  Inject,
+  OnModuleInit,
+  OnModuleDestroy,
+} from "@nestjs/common";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { Pool } from "pg";
+import { Pool, PoolClient } from "pg";
 import * as schema from "./schema";
 import { DB_OPTIONS, DBConfigType } from "./database.interface";
 
 @Injectable()
-export class DatabaseService implements OnModuleInit {
+export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private pool: Pool;
   public db: ReturnType<typeof drizzle>;
 
@@ -23,12 +28,15 @@ export class DatabaseService implements OnModuleInit {
   }
 
   async onModuleInit() {
+    let client: PoolClient | undefined;
     try {
-      await this.pool.connect();
+      client = await this.pool.connect();
       console.log("Connected to database with Drizzle");
     } catch (error) {
       console.error("Failed to connect to database:", error);
       throw error;
+    } finally {
+      client?.release();
     }
   }
 

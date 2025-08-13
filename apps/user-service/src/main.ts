@@ -17,6 +17,10 @@ async function bootstrap() {
       },
     },
   );
+
+  // Enable shutdown hooks to ensure OnModuleDestroy lifecycle hooks run
+  app.enableShutdownHooks(['SIGINT', 'SIGTERM', 'SIGQUIT']);
+
   logger.log(`Running on port ${port}`);
   await app.listen();
 }

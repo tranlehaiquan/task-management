@@ -32,7 +32,6 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      // Step 1: Validate the JWT token and get the payload
       const jwtPayload = await firstValueFrom(
         this.authService.send<UserJWTPayload | null, string>(
           'auth.validateToken',
@@ -44,7 +43,6 @@ export class AuthGuard implements CanActivate {
         return false;
       }
 
-      // Step 2: Fetch the full user data from USER_SERVICE using the ID from JWT
       const userData = await firstValueFrom(
         this.userService.send<CurrentUser | null, string>(
           'user.findById',

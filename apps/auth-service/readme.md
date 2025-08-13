@@ -4,7 +4,5 @@ This service is responsible for handling authentication and authorization for th
 
 ## Features
 
-- JWT token generation/validation
-- Password hashing/verification
-- Registration workflow
-- Token refresh
+- [x] JWT token generation/validation
+- [ ] Token refresh

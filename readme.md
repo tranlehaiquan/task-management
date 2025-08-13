@@ -536,6 +536,7 @@ For questions or support, please open an issue or contact the development team.
 
 ```mermaid
 erDiagram
+    %% USER SERVICE DATABASE
     users {
         uuid id PK
         varchar email UK
@@ -606,31 +607,132 @@ erDiagram
         timestamp updated_at
     }
 
-    password_reset_tokens {
+    %% PROJECT SERVICE DATABASE
+    projects {
         uuid id PK
-        uuid user_id FK
-        varchar token UK
-        timestamp expires_at
-        timestamp used_at
+        varchar name
+        text description
+        varchar status
+        uuid created_by FK "Reference to users.id"
+        varchar created_by_name "Denormalized"
+        uuid team_id FK "Reference to teams.id"
+        varchar team_name "Denormalized"
+        boolean is_public
+        varchar color
+        timestamp start_date
+        timestamp end_date
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    project_members {
+        uuid id PK
+        uuid project_id FK
+        uuid user_id FK "Reference to users.id"
+        varchar user_name "Denormalized"
+        varchar role
+        boolean is_active
+        timestamp joined_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    %% TASK SERVICE DATABASE
+    tasks {
+        uuid id PK
+        varchar title
+        text description
+        varchar status
+        varchar priority
+        uuid project_id FK "Reference to projects.id"
+        varchar project_name "Denormalized"
+        uuid assigned_to FK "Reference to users.id"
+        varchar assigned_to_name "Denormalized"
+        uuid created_by FK "Reference to users.id"
+        varchar created_by_name "Denormalized"
+        uuid parent_task_id FK "Self-reference for subtasks"
+        timestamp due_date
+        timestamp completed_at
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    task_dependencies {
+        uuid id PK
+        uuid task_id FK
+        uuid depends_on_task_id FK
+        varchar dependency_type
         timestamp created_at
     }
 
-    email_verification_tokens {
+    task_comments {
         uuid id PK
-        uuid user_id FK
-        varchar token UK
-        timestamp expires_at
-        timestamp verified_at
+        uuid task_id FK
+        uuid user_id FK "Reference to users.id"
+        varchar user_name "Denormalized"
+        text content
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    task_attachments {
+        uuid id PK
+        uuid task_id FK
+        varchar filename
+        varchar file_url
+        varchar file_type
+        bigint file_size
+        uuid uploaded_by FK "Reference to users.id"
         timestamp created_at
     }
 
-    %% Relationships
+    %% TIME TRACKING SERVICE DATABASE
+    time_entries {
+        uuid id PK
+        uuid user_id FK "Reference to users.id"
+        varchar user_name "Denormalized"
+        uuid project_id FK "Reference to projects.id"
+        varchar project_name "Denormalized"
+        uuid task_id FK "Reference to tasks.id"
+        varchar task_title "Denormalized"
+        text description
+        timestamp start_time
+        timestamp end_time
+        integer duration_minutes
+        boolean is_billable
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    %% NOTIFICATION SERVICE DATABASE
+    notifications {
+        uuid id PK
+        uuid user_id FK "Reference to users.id"
+        varchar type
+        varchar title
+        text message
+        jsonb data
+        boolean is_read
+        timestamp read_at
+        timestamp created_at
+    }
+
+    notification_preferences {
+        uuid id PK
+        uuid user_id FK "Reference to users.id"
+        varchar notification_type
+        boolean email_enabled
+        boolean push_enabled
+        boolean in_app_enabled
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    %% USER SERVICE RELATIONSHIPS
     users ||--o{ teams : "creates"
-    users ||--o{ team_memberships : "belongs to"
+    users ||--o{ team_memberships : "belongs_to"
     users ||--|| user_preferences : "has"
-    users ||--o{ user_sessions : "has"
-    users ||--o{ password_reset_tokens : "requests"
-    users ||--o{ email_verification_tokens : "verifies"
+    users ||--o{ user_sessions : "has_sessions"
 
     teams ||--o{ team_memberships : "contains"
     roles ||--o{ team_memberships : "defines"
@@ -638,4 +740,26 @@ erDiagram
     team_memberships }o--|| users : "user"
     team_memberships }o--|| teams : "team"
     team_memberships }o--|| roles : "role"
+
+    %% CROSS-SERVICE RELATIONSHIPS (Logical, not FK)
+    users ||--o{ projects : "creates (via service call)"
+    teams ||--o{ projects : "owns (via service call)"
+    users ||--o{ project_members : "member_of (via service call)"
+    projects ||--o{ project_members : "has_members"
+
+    projects ||--o{ tasks : "contains (via service call)"
+    users ||--o{ tasks : "assigned_to (via service call)"
+    users ||--o{ tasks : "created_by (via service call)"
+    tasks ||--o{ tasks : "subtasks"
+    tasks ||--o{ task_dependencies : "has_dependencies"
+    tasks ||--o{ task_comments : "has_comments"
+    tasks ||--o{ task_attachments : "has_attachments"
+    users ||--o{ task_comments : "writes (via service call)"
+
+    users ||--o{ time_entries : "logs_time (via service call)"
+    projects ||--o{ time_entries : "time_logged (via service call)"
+    tasks ||--o{ time_entries : "time_logged (via service call)"
+
+    users ||--o{ notifications : "receives (via service call)"
+    users ||--o{ notification_preferences : "has_preferences (via service call)"
 ```

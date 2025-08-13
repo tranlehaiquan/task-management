@@ -10,7 +10,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Enable shutdown hooks to ensure OnModuleDestroy lifecycle hooks run
-  app.enableShutdownHooks();
+  app.enableShutdownHooks(['SIGINT', 'SIGTERM', 'SIGQUIT']);
 
   // Enable CORS if needed
   app.enableCors();

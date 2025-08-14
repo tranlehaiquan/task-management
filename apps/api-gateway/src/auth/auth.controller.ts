@@ -26,6 +26,7 @@ import {
   ErrorResponseDto,
   ConflictErrorResponseDto,
 } from './dto/auth-response.dto';
+import { EmailVerifyDto } from './dto/email-verify.dto';
 import { firstValueFrom } from 'rxjs';
 import { type User } from '@task-mgmt/database';
 import { CurrentUser } from 'src/decorators/user.decorator';
@@ -166,5 +167,74 @@ export class AuthController {
   @ApiBearerAuth('JWT-auth')
   me(@CurrentUser() user: CurrentUserType) {
     return user;
+  }
+
+  @Post('verify-email')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  async verifyEmail(@CurrentUser() user: CurrentUserType) {
+    return await firstValueFrom(
+      this.userService.send('user.verifyEmailUser', { userId: user.id }),
+    );
+  }
+
+  @Post('resend-verification')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  async resendVerification(@CurrentUser() user: CurrentUserType) {
+    return await firstValueFrom(
+      this.userService.send('user.verifyEmailUser', { userId: user.id }),
+    );
+  }
+
+  @Post('verify-email-token')
+  @ApiOperation({
+    summary: 'Verify email with token',
+    description: 'Verify user email using the verification token sent to their email address',
+  })
+  @ApiBody({
+    type: EmailVerifyDto,
+    description: 'Email verification token',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Email verified successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean', example: true },
+        message: { type: 'string', example: 'Email verified successfully' },
+      },
+    },
+  })
+  @ApiBadRequestResponse({
+    description: 'Invalid or expired token',
+    type: ErrorResponseDto,
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Internal server error',
+    type: ErrorResponseDto,
+  })
+  async verifyEmailToken(@Body() emailVerifyDto: EmailVerifyDto): Promise<{ success: boolean; message: string }> {
+    const { token } = emailVerifyDto;
+
+    const result = await firstValueFrom(
+      this.userService.send<{ isValid: boolean; userId?: string }, { token: string }>(
+        'user.validateEmailVerificationToken',
+        { token },
+      ),
+    );
+
+    if (!result.isValid) {
+      throw new HttpException(
+        'Invalid or expired verification token',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return {
+      success: true,
+      message: 'Email verified successfully',
+    };
   }
 }

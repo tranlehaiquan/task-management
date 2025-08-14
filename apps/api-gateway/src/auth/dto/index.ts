@@ -2,6 +2,7 @@
 export { default as LoginDto } from './login.dto';
 export { RegisterDto } from './register.dto';
 export { ForgotPasswordDto } from './forgotPassword.dto';
+export { EmailVerifyDto } from './email-verify.dto';
 export {
   AuthResponseDto,
   ErrorResponseDto,

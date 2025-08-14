@@ -4,13 +4,17 @@ import { UsersService } from './users.service';
 import type { NewUser, User } from '@task-mgmt/database';
 import { CreateNewUserDto } from './dto/createNewUser.dto';
 import type { FindUserCriteria } from './dto/findUser.dto';
+import { MailService } from '@task-mgmt/mail';
 
 // Type for user data without passwordHash
 type SanitizedUser = Omit<User, 'passwordHash'>;
 
 @Controller()
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly mailService: MailService,
+  ) {}
 
   // Message patterns for microservice communication
   @MessagePattern('user.create')
@@ -84,5 +88,51 @@ export class UsersController {
   @MessagePattern('user.updateLastLoginAt')
   async updateLastLoginAtMessage(id: string): Promise<SanitizedUser | null> {
     return this.usersService.updateLastLoginAt(id);
+  }
+
+  @MessagePattern('user.verifyEmailUser')
+  async verifyEmailUserMessage({ userId }: { userId: string }): Promise<{
+    success: boolean;
+  }> {
+    const user = await this.usersService.getUserById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    if (user.isEmailVerified) {
+      throw new Error('Email already verified');
+    }
+
+    if (!user.email) {
+      throw new Error('User email not found');
+    }
+
+    // Create email verification token using service
+    const emailVerificationTokenRecord = await this.usersService.createEmailVerificationToken(userId, user.email);
+    console.log('emailVerificationTokenRecord', emailVerificationTokenRecord);
+
+    this.mailService.transporter.sendMail({
+      to: user.email,
+      subject: 'Verify your email',
+      text: 'Please verify your email by clicking the link below',
+      html: `<p>Please verify your email by clicking the link below <a href="${process.env.FRONTEND_URL}/verify-email/${emailVerificationTokenRecord.token}">${process.env.FRONTEND_URL}/verify-email/${emailVerificationTokenRecord.token}</a></p>`,
+    });
+
+    return { success: true };
+  }
+
+  @MessagePattern('user.validateEmailVerificationToken')
+  async validateEmailVerificationTokenMessage({ token }: { token: string }): Promise<{ isValid: boolean; userId?: string }> {
+    return this.usersService.validateEmailVerificationToken(token);
+  }
+
+  @MessagePattern('user.sendPasswordResetEmail')
+  async sendPasswordResetEmailMessage(email: string): Promise<void> {
+    this.mailService.transporter.sendMail({
+      to: email,
+      subject: 'Reset your password',
+      text: 'Please reset your password by clicking the link below',
+      html: '<p>Please reset your password by clicking the link below</p>',
+    });
   }
 }

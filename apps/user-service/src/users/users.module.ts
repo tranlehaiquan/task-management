@@ -3,12 +3,19 @@ import { DatabaseModule } from '@task-mgmt/database';
 import { UsersController } from './users.controller';
 import { ConfigModule } from '@nestjs/config';
 import { UsersService } from './users.service';
+import { MailModule } from '@task-mgmt/mail';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+    }),
+    MailModule.forRoot({
+      host: "smtp.ethereal.email",
+      port: 587,
+      user: "dustin.bechtelar21@ethereal.email",
+      pass: "aX8cue9qqNDsBNxyyv",
     }),
     DatabaseModule.register({
       host: process.env.DB_HOST,

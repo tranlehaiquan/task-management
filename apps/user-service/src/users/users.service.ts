@@ -2,12 +2,14 @@ import { Injectable } from '@nestjs/common';
 import {
   DatabaseService,
   users,
+  emailVerificationTokens,
   type NewUser,
   type User,
 } from '@task-mgmt/database';
 import { eq, and, ilike, type SQL } from 'drizzle-orm';
 import { PasswordUtils } from '../utils/password.utils';
 import { sanitizeUserData, sanitizeUsersData } from '../utils/user.utils';
+import { randomString } from '../utils/crypto.utils';
 import { CreateNewUserDto } from './dto/createNewUser.dto';
 import { FindUserCriteria } from './dto/findUser.dto';
 
@@ -199,5 +201,90 @@ export class UsersService {
       .where(eq(users.id, id))
       .returning();
     return user ? sanitizeUserData(user) : null;
+  }
+
+  /**
+   * Create or update an email verification token for a user
+   * @param userId - The user ID
+   * @param email - The user's email
+   * @returns The email verification token record
+   */
+  async createEmailVerificationToken(userId: string, email: string) {
+    const token = randomString(32);
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 5); // 5 days from now
+
+    // Check if there is an existing email verification token for this user
+    const existingEmailVerificationToken = await this.databaseService.db
+      .select()
+      .from(emailVerificationTokens)
+      .where(eq(emailVerificationTokens.userId, userId))
+      .limit(1);
+
+    if (existingEmailVerificationToken.length > 0) {
+      // Update existing token
+      return existingEmailVerificationToken[0];
+    } else {
+      // Create new token
+      const [emailVerificationTokenRecord] = await this.databaseService.db
+        .insert(emailVerificationTokens)
+        .values({
+          userId,
+          email,
+          token,
+          expiresAt,
+        })
+        .returning();
+      return emailVerificationTokenRecord;
+    }
+  }
+
+  /**
+   * Validate an email verification token and mark user as verified if valid
+   * @param token - The verification token
+   * @returns Object with validation result and user ID if valid
+   */
+  async validateEmailVerificationToken(token: string): Promise<{ isValid: boolean; userId?: string }> {
+    // Find the token in the database
+    const [emailVerificationToken] = await this.databaseService.db
+      .select()
+      .from(emailVerificationTokens)
+      .where(eq(emailVerificationTokens.token, token))
+      .limit(1);
+
+    if (!emailVerificationToken) {
+      return { isValid: false };
+    }
+
+    // Check if token has expired
+    const now = new Date();
+    if (emailVerificationToken.expiresAt < now) {
+      return { isValid: false };
+    }
+
+    // Check if user is valid and not already verified
+    const user = await this.getUserById(emailVerificationToken.userId);
+    if (!user) {
+      return { isValid: false };
+    }
+
+    if (user.isEmailVerified) {
+      // Email already verified, clean up token
+      await this.databaseService.db
+        .delete(emailVerificationTokens)
+        .where(eq(emailVerificationTokens.token, token));
+      return { isValid: false };
+    }
+
+    // Token is valid, mark user as verified
+    await this.updateUser(emailVerificationToken.userId, {
+      isEmailVerified: true,
+    });
+
+    // Clean up the verification token
+    await this.databaseService.db
+      .delete(emailVerificationTokens)
+      .where(eq(emailVerificationTokens.token, token));
+
+    return { isValid: true, userId: emailVerificationToken.userId };
   }
 }

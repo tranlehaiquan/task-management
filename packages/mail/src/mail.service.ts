@@ -1,4 +1,14 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import {  constructor(@Inject(MAIL_CONFIG) private readonly mailConfig: MailConfig) {
+    console.log(this.mailConfig);
+    this.transporter = nodemailer.createTransporter({
+      host: this.mailConfig.host,
+      port: this.mailConfig.port,
+      auth: {
+        user: this.mailConfig.user,
+        pass: this.mailConfig.pass,
+      },
+    });
+  }jectable, OnModuleInit } from '@nestjs/common';
 import nodemailer from 'nodemailer';
 import { MAIL_CONFIG, MailConfig } from './mail.inferface';
 

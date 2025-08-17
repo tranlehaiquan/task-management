@@ -19,12 +19,12 @@ export class MailService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    this.transporter.verify((error) => {
-      if (error) {
-        console.log(error);
-      } else {
-        console.log("Email server is ready to take our messages");
-      }
-    });
+    try {
+      await this.transporter.verify();
+      console.log("Mail transporter verified successfully");
+    } catch (error) {
+      console.error("Mail transporter verification failed:", error);
+      throw error;
+    }
   }
 }

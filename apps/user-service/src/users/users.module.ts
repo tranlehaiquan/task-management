@@ -12,10 +12,10 @@ import { MailModule } from '@task-mgmt/mail';
       envFilePath: '.env',
     }),
     MailModule.forRoot({
-      host: "smtp.ethereal.email",
-      port: 587,
-      user: "dustin.bechtelar21@ethereal.email",
-      pass: "aX8cue9qqNDsBNxyyv",
+      host: process.env.MAIL_HOST || 'smtp.ethereal.email',
+      port: Number(process.env.MAIL_PORT || 587),
+      user: process.env.MAIL_USER || 'dustin.bechtelar21@ethereal.email',
+      pass: process.env.MAIL_PASS || 'aX8cue9qqNDsBNxyyv',
     }),
     DatabaseModule.register({
       host: process.env.DB_HOST,

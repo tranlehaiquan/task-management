@@ -117,18 +117,37 @@ export class UsersController {
       };
     }
 
+    // Validate and normalize FRONTEND_URL
+    const frontendUrl = process.env.FRONTEND_URL;
+    if (!frontendUrl) {
+      return {
+        success: false,
+        error: 'FRONTEND_URL environment variable is not configured',
+      };
+    }
+
+    // Remove trailing slash if present to normalize URL
+    const normalizedFrontendUrl = frontendUrl.replace(/\/$/, '');
+
     // Create email verification token using service
     const emailVerificationTokenRecord =
       await this.usersService.createEmailVerificationToken(userId, user.email);
 
-    this.mailService.transporter.sendMail({
-      to: user.email,
-      subject: 'Verify your email',
-      text: 'Please verify your email by clicking the link below',
-      html: `<p>Please verify your email by clicking the link below <a href="${process.env.FRONTEND_URL}/verify-email/${emailVerificationTokenRecord.token}">${process.env.FRONTEND_URL}/verify-email/${emailVerificationTokenRecord.token}</a></p>`,
-    });
+    try {
+      await this.mailService.transporter.sendMail({
+        to: user.email,
+        subject: 'Verify your email',
+        text: 'Please verify your email by clicking the link below',
+        html: `<p>Please verify your email by clicking the link below <a href="${normalizedFrontendUrl}/verify-email/${emailVerificationTokenRecord.token}">${normalizedFrontendUrl}/verify-email/${emailVerificationTokenRecord.token}</a></p>`,
+      });
 
-    return { success: true };
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: `Failed to send verification email: ${error.message}`,
+      };
+    }
   }
 
   @MessagePattern('user.validateEmailVerificationToken')
@@ -146,7 +165,7 @@ export class UsersController {
 
   @MessagePattern('user.sendPasswordResetEmail')
   async sendPasswordResetEmailMessage(email: string): Promise<void> {
-    this.mailService.transporter.sendMail({
+    await this.mailService.transporter.sendMail({
       to: email,
       subject: 'Reset your password',
       text: 'Please reset your password by clicking the link below',

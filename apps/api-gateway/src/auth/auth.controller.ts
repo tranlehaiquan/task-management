@@ -180,12 +180,12 @@ export class AuthController {
 
     if (!success) {
       throw new HttpException(
-        error || 'Failed to verify email',
+        error || 'Failed to send verification email',
         HttpStatus.BAD_REQUEST,
       );
     }
 
-    return { success, message: 'Email verified successfully' };
+    return { success, message: 'Verification email sent' };
   }
 
   @Post('verify-email-token')

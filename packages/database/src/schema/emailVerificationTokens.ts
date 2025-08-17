@@ -1,9 +1,4 @@
-import {
-  pgTable,
-  uuid,
-  varchar,
-  timestamp,
-} from "drizzle-orm/pg-core";
+import { pgTable, uuid, varchar, timestamp } from "drizzle-orm/pg-core";
 import { users } from "./users";
 import { relations } from "drizzle-orm";
 
@@ -20,12 +15,17 @@ export const emailVerificationTokens = pgTable("email_verification_tokens", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const emailVerificationTokenRelations = relations(emailVerificationTokens, ({ one }) => ({
-  user: one(users, {
-    fields: [emailVerificationTokens.userId],
-    references: [users.id],
-  }),
-}));
+export const emailVerificationTokenRelations = relations(
+  emailVerificationTokens,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [emailVerificationTokens.userId],
+      references: [users.id],
+    }),
+  })
+);
 
-export type EmailVerificationToken = typeof emailVerificationTokens.$inferSelect;
-export type NewEmailVerificationToken = typeof emailVerificationTokens.$inferInsert;
+export type EmailVerificationToken =
+  typeof emailVerificationTokens.$inferSelect;
+export type NewEmailVerificationToken =
+  typeof emailVerificationTokens.$inferInsert;

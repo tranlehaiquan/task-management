@@ -7,4 +7,4 @@ export type DBConfigType = {
   ssl?: boolean | { rejectUnauthorized: boolean };
 };
 
-export const DB_OPTIONS = Symbol("DB_OPTIONS");
+export const DB_OPTIONS = Symbol('DB_OPTIONS');

@@ -143,9 +143,10 @@ export class UsersController {
 
       return { success: true };
     } catch (error) {
+      console.log(error);
       return {
         success: false,
-        error: `Failed to send verification email: ${error.message}`,
+        error: `Failed to send verification email`,
       };
     }
   }

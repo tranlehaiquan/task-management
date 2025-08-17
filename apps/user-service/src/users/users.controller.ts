@@ -90,26 +90,36 @@ export class UsersController {
     return this.usersService.updateLastLoginAt(id);
   }
 
-  @MessagePattern('user.verifyEmailUser')
+  @MessagePattern('user.sendVerifyEmailUser')
   async verifyEmailUserMessage({ userId }: { userId: string }): Promise<{
     success: boolean;
+    error?: string;
   }> {
     const user = await this.usersService.getUserById(userId);
     if (!user) {
-      throw new Error('User not found');
+      return {
+        success: false,
+        error: 'User not found',
+      };
     }
 
     if (user.isEmailVerified) {
-      throw new Error('Email already verified');
+      return {
+        success: false,
+        error: 'Email already verified',
+      };
     }
 
     if (!user.email) {
-      throw new Error('User email not found');
+      return {
+        success: false,
+        error: 'User email not found',
+      };
     }
 
     // Create email verification token using service
-    const emailVerificationTokenRecord = await this.usersService.createEmailVerificationToken(userId, user.email);
-    console.log('emailVerificationTokenRecord', emailVerificationTokenRecord);
+    const emailVerificationTokenRecord =
+      await this.usersService.createEmailVerificationToken(userId, user.email);
 
     this.mailService.transporter.sendMail({
       to: user.email,
@@ -122,7 +132,15 @@ export class UsersController {
   }
 
   @MessagePattern('user.validateEmailVerificationToken')
-  async validateEmailVerificationTokenMessage({ token }: { token: string }): Promise<{ isValid: boolean; userId?: string }> {
+  async validateEmailVerificationTokenMessage({
+    token,
+  }: {
+    token: string;
+  }): Promise<{
+    success: boolean;
+    error?: string;
+    userId?: string;
+  }> {
     return this.usersService.validateEmailVerificationToken(token);
   }
 

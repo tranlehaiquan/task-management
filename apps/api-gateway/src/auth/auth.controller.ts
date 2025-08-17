@@ -173,24 +173,26 @@ export class AuthController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
   async verifyEmail(@CurrentUser() user: CurrentUserType) {
-    return await firstValueFrom(
-      this.userService.send('user.verifyEmailUser', { userId: user.id }),
-    );
-  }
+    const { success, error } = await firstValueFrom<{
+      success: boolean;
+      error?: string;
+    }>(this.userService.send('user.sendVerifyEmailUser', { userId: user.id }));
 
-  @Post('resend-verification')
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  async resendVerification(@CurrentUser() user: CurrentUserType) {
-    return await firstValueFrom(
-      this.userService.send('user.verifyEmailUser', { userId: user.id }),
-    );
+    if (!success) {
+      throw new HttpException(
+        error || 'Failed to verify email',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return { success, message: 'Email verified successfully' };
   }
 
   @Post('verify-email-token')
   @ApiOperation({
     summary: 'Verify email with token',
-    description: 'Verify user email using the verification token sent to their email address',
+    description:
+      'Verify user email using the verification token sent to their email address',
   })
   @ApiBody({
     type: EmailVerifyDto,
@@ -215,19 +217,21 @@ export class AuthController {
     description: 'Internal server error',
     type: ErrorResponseDto,
   })
-  async verifyEmailToken(@Body() emailVerifyDto: EmailVerifyDto): Promise<{ success: boolean; message: string }> {
+  async verifyEmailToken(
+    @Body() emailVerifyDto: EmailVerifyDto,
+  ): Promise<{ success: boolean; message: string }> {
     const { token } = emailVerifyDto;
 
     const result = await firstValueFrom(
-      this.userService.send<{ isValid: boolean; userId?: string }, { token: string }>(
-        'user.validateEmailVerificationToken',
-        { token },
-      ),
+      this.userService.send<
+        { success: boolean; error?: string; userId?: string },
+        { token: string }
+      >('user.validateEmailVerificationToken', { token }),
     );
 
-    if (!result.isValid) {
+    if (!result.success) {
       throw new HttpException(
-        'Invalid or expired verification token',
+        result.error || 'Invalid or expired verification token',
         HttpStatus.BAD_REQUEST,
       );
     }

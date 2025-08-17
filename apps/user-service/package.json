@@ -28,6 +28,7 @@
     "@nestjs/platform-express": "^11.1.6",
     "@task-mgmt/database": "workspace:*",
     "@task-mgmt/shared-config": "workspace:*",
+    "@task-mgmt/mail": "workspace:*",
     "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",

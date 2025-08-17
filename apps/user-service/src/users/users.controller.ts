@@ -4,13 +4,17 @@ import { UsersService } from './users.service';
 import type { NewUser, User } from '@task-mgmt/database';
 import { CreateNewUserDto } from './dto/createNewUser.dto';
 import type { FindUserCriteria } from './dto/findUser.dto';
+import { MailService } from '@task-mgmt/mail';
 
 // Type for user data without passwordHash
 type SanitizedUser = Omit<User, 'passwordHash'>;
 
 @Controller()
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly mailService: MailService,
+  ) {}
 
   // Message patterns for microservice communication
   @MessagePattern('user.create')
@@ -84,5 +88,89 @@ export class UsersController {
   @MessagePattern('user.updateLastLoginAt')
   async updateLastLoginAtMessage(id: string): Promise<SanitizedUser | null> {
     return this.usersService.updateLastLoginAt(id);
+  }
+
+  @MessagePattern('user.sendVerifyEmailUser')
+  async verifyEmailUserMessage({ userId }: { userId: string }): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    const user = await this.usersService.getUserById(userId);
+    if (!user) {
+      return {
+        success: false,
+        error: 'User not found',
+      };
+    }
+
+    if (user.isEmailVerified) {
+      return {
+        success: false,
+        error: 'Email already verified',
+      };
+    }
+
+    if (!user.email) {
+      return {
+        success: false,
+        error: 'User email not found',
+      };
+    }
+
+    // Validate and normalize FRONTEND_URL
+    const frontendUrl = process.env.FRONTEND_URL;
+    if (!frontendUrl) {
+      return {
+        success: false,
+        error: 'FRONTEND_URL environment variable is not configured',
+      };
+    }
+
+    // Remove trailing slash if present to normalize URL
+    const normalizedFrontendUrl = frontendUrl.replace(/\/$/, '');
+
+    // Create email verification token using service
+    const emailVerificationTokenRecord =
+      await this.usersService.createEmailVerificationToken(userId, user.email);
+
+    try {
+      await this.mailService.transporter.sendMail({
+        to: user.email,
+        subject: 'Verify your email',
+        text: 'Please verify your email by clicking the link below',
+        html: `<p>Please verify your email by clicking the link below <a href="${normalizedFrontendUrl}/verify-email/${emailVerificationTokenRecord.token}">${normalizedFrontendUrl}/verify-email/${emailVerificationTokenRecord.token}</a></p>`,
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.log(error);
+      return {
+        success: false,
+        error: `Failed to send verification email`,
+      };
+    }
+  }
+
+  @MessagePattern('user.validateEmailVerificationToken')
+  async validateEmailVerificationTokenMessage({
+    token,
+  }: {
+    token: string;
+  }): Promise<{
+    success: boolean;
+    error?: string;
+    userId?: string;
+  }> {
+    return this.usersService.validateEmailVerificationToken(token);
+  }
+
+  @MessagePattern('user.sendPasswordResetEmail')
+  async sendPasswordResetEmailMessage(email: string): Promise<void> {
+    await this.mailService.transporter.sendMail({
+      to: email,
+      subject: 'Reset your password',
+      text: 'Please reset your password by clicking the link below',
+      html: '<p>Please reset your password by clicking the link below</p>',
+    });
   }
 }

@@ -3,12 +3,19 @@ import { DatabaseModule } from '@task-mgmt/database';
 import { UsersController } from './users.controller';
 import { ConfigModule } from '@nestjs/config';
 import { UsersService } from './users.service';
+import { MailModule } from '@task-mgmt/mail';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+    }),
+    MailModule.forRoot({
+      host: process.env.MAIL_HOST!,
+      port: Number(process.env.MAIL_PORT!),
+      user: process.env.MAIL_USER!,
+      pass: process.env.MAIL_PASS!,
     }),
     DatabaseModule.register({
       host: process.env.DB_HOST,

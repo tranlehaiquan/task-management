@@ -1,14 +1,4 @@
-import {  constructor(@Inject(MAIL_CONFIG) private readonly mailConfig: MailConfig) {
-    console.log(this.mailConfig);
-    this.transporter = nodemailer.createTransporter({
-      host: this.mailConfig.host,
-      port: this.mailConfig.port,
-      auth: {
-        user: this.mailConfig.user,
-        pass: this.mailConfig.pass,
-      },
-    });
-  }jectable, OnModuleInit } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import nodemailer from 'nodemailer';
 import { MAIL_CONFIG, MailConfig } from './mail.inferface';
 
@@ -19,11 +9,11 @@ export class MailService implements OnModuleInit {
   constructor(@Inject(MAIL_CONFIG) private readonly mailConfig: MailConfig) {
     console.log(this.mailConfig);
     this.transporter = nodemailer.createTransport({
-      host: this.mailConfig.host || 'smtp.ethereal.email',
-      port: this.mailConfig.port || 587,
+      host: this.mailConfig.host,
+      port: this.mailConfig.port,
       auth: {
-        user: this.mailConfig.user || 'dustin.bechtelar21@ethereal.email',
-        pass: this.mailConfig.pass || 'aX8cue9qqNDsBNxyyv',
+        user: this.mailConfig.user,
+        pass: this.mailConfig.pass,
       },
     });
   }

@@ -3,6 +3,7 @@ import {
   CanActivate,
   ExecutionContext,
   Inject,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -31,22 +32,24 @@ export class AuthGuard implements CanActivate {
       return false;
     }
 
-    try {
-      const jwtPayload = await firstValueFrom(
-        this.authService.send<UserJWTPayload | null, string>(
-          'auth.validateToken',
-          token,
-        ),
-      );
+    const jwtPayload = await firstValueFrom(
+      this.authService.send<
+        | { success: true; data: UserJWTPayload }
+        | { success: false; error: string },
+        string
+      >('auth.validateToken', token),
+    );
 
-      if (!jwtPayload || !jwtPayload.id) {
+    if (jwtPayload.success) {
+      const { data } = jwtPayload;
+      if (!data || !data.id) {
         return false;
       }
 
       const userData = await firstValueFrom(
         this.userService.send<CurrentUser | null, string>(
           'user.findById',
-          jwtPayload.id,
+          data.id,
         ),
       );
 
@@ -58,8 +61,12 @@ export class AuthGuard implements CanActivate {
       // Step 3: Attach sanitized user object to request
       request.user = userData;
       return true;
-    } catch {
-      return false;
     }
+
+    if (jwtPayload.error === 'TokenExpiredError') {
+      throw new UnauthorizedException('JWT token has expired');
+    }
+
+    return false;
   }
 }

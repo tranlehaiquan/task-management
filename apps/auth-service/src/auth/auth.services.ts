@@ -13,14 +13,29 @@ export class AuthService {
     return jwt.sign(payload, process.env.JWT_SECRET as string, { expiresIn });
   }
 
-  validateToken(token: string): object | null {
+  validateToken(token: string):
+    | {
+        success: true;
+        data: UserJWTPayload;
+      }
+    | {
+        success: false;
+        error: string;
+      } {
     try {
-      return jwt.verify(
+      const data = jwt.verify(
         token,
         process.env.JWT_SECRET as string,
       ) as UserJWTPayload;
-    } catch {
-      return null;
+      return {
+        success: true,
+        data,
+      };
+    } catch (e) {
+      return {
+        success: false,
+        error: e.name || e.message,
+      };
     }
   }
 }

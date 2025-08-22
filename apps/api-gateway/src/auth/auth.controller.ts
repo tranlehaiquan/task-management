@@ -32,6 +32,7 @@ import { type User } from '@task-mgmt/database';
 import { CurrentUser } from 'src/decorators/user.decorator';
 import type { CurrentUser as CurrentUserType } from '@task-mgmt/shared-types';
 import { AuthGuard } from 'src/guards/auth.guards';
+import { ForgotPasswordDto } from './dto';
 
 @ApiTags('Authentication')
 @Controller('api/auth')
@@ -240,5 +241,25 @@ export class AuthController {
       success: true,
       message: 'Email verified successfully',
     };
+  }
+
+  @Post('forgot-password')
+  async forgotPassword(@Body() forgotPassword: ForgotPasswordDto) {
+    const messageSuccess = 'We have sent a password reset link to it.';
+    const email = forgotPassword.email;
+
+    const user = await firstValueFrom(
+      this.userService.send<User | null, string>('user.findUserByEmail', email),
+    );
+
+    if (!user) {
+      // always send message success although user not found
+      return {
+        success: true,
+        message: messageSuccess,
+      };
+    }
+
+    // todo do the reset
   }
 }

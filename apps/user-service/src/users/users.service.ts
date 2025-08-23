@@ -207,9 +207,14 @@ export class UsersService {
    * Create or update an email verification token for a user
    * @param userId - The user ID
    * @param email - The user's email
+   * @param type - The type of token ('email_verification' or 'password_reset')
    * @returns The email verification token record
    */
-  async createEmailVerificationToken(userId: string, email: string) {
+  async createVerificationToken(
+    userId: string,
+    email: string,
+    type: 'email_verification' | 'password_reset' = 'email_verification',
+  ) {
     const token = randomString(32);
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 5); // 5 days from now
 
@@ -217,30 +222,34 @@ export class UsersService {
     const [existingEmailVerificationToken] = await this.databaseService.db
       .select()
       .from(emailVerificationTokens)
-      .where(eq(emailVerificationTokens.userId, userId))
+      .where(
+        and(
+          eq(emailVerificationTokens.userId, userId),
+          eq(emailVerificationTokens.type, type),
+        ),
+      )
       .limit(1);
 
-    if (!existingEmailVerificationToken) {
-      const [emailVerificationTokenRecord] = await this.databaseService.db
-        .insert(emailVerificationTokens)
-        .values({
-          userId,
-          email,
-          token,
-          expiresAt,
-        })
-        .returning();
-      return emailVerificationTokenRecord;
+    if (existingEmailVerificationToken) {
+      // delete the existing token
+      await this.databaseService.db
+        .delete(emailVerificationTokens)
+        .where(
+          eq(emailVerificationTokens.id, existingEmailVerificationToken.id),
+        );
     }
 
-    // update expire time
-    const [updatedToken] = await this.databaseService.db
-      .update(emailVerificationTokens)
-      .set({ expiresAt })
-      .where(eq(emailVerificationTokens.id, existingEmailVerificationToken.id))
+    const [emailVerificationTokenRecord] = await this.databaseService.db
+      .insert(emailVerificationTokens)
+      .values({
+        userId,
+        email,
+        token,
+        expiresAt,
+        type,
+      })
       .returning();
-
-    return updatedToken;
+    return emailVerificationTokenRecord;
   }
 
   /**
@@ -268,7 +277,6 @@ export class UsersService {
       return { success: false, error: 'Token has expired' };
     }
 
-    // Check if user is valid and not already verified
     const user = await this.getUserById(emailVerificationToken.userId);
     if (!user) {
       return { success: false, error: 'User not found' };

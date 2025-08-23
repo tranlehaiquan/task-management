@@ -245,21 +245,23 @@ export class AuthController {
 
   @Post('forgot-password')
   async forgotPassword(@Body() forgotPassword: ForgotPasswordDto) {
-    const messageSuccess = 'We have sent a password reset link to it.';
-    const email = forgotPassword.email;
+    const { email } = forgotPassword;
 
-    const user = await firstValueFrom(
-      this.userService.send<User | null, string>('user.findUserByEmail', email),
+    // Let user service handle the entire forgot password flow
+    const result = await firstValueFrom(
+      this.userService.send<
+        { success: boolean; error?: string },
+        { email: string }
+      >('user.forgotPassword', { email }),
     );
 
-    if (!user) {
-      // always send message success although user not found
-      return {
-        success: true,
-        message: messageSuccess,
-      };
-    }
+    console.log(result);
 
-    // todo do the reset
+    // Always return success for security (don't reveal if email exists)
+    return {
+      success: true,
+      message:
+        'If an account with that email exists, a password reset link has been sent.',
+    };
   }
 }

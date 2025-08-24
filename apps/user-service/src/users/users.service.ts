@@ -308,11 +308,17 @@ export class UsersService {
    * @param token - The forgot password token
    * @returns
    */
-  async validateForgotPasswordToken(token: string): Promise<{
-    success: boolean;
-    error?: string;
-  }> {
-    const [emailVerificationToken] = await this.databaseService.db
+  async validateForgotPasswordToken(token: string): Promise<
+    | {
+        success: false;
+        error?: string;
+      }
+    | {
+        success: true;
+        user: Omit<User, 'passwordHash'>;
+      }
+  > {
+    const [forgotPasswordToken] = await this.databaseService.db
       .select()
       .from(emailVerificationTokens)
       .where(
@@ -323,23 +329,75 @@ export class UsersService {
       )
       .limit(1);
 
-    if (!emailVerificationToken) {
+    if (!forgotPasswordToken) {
       return { success: false, error: 'Token not found' };
     }
 
     // Check if token has expired
     const now = new Date();
-    if (emailVerificationToken.expiresAt < now) {
+    if (forgotPasswordToken.expiresAt < now) {
       return { success: false, error: 'Token has expired' };
     }
 
-    const user = await this.getUserById(emailVerificationToken.userId);
+    const user = await this.getUserById(forgotPasswordToken.userId);
     if (!user) {
       return { success: false, error: 'User not found' };
     }
 
     return {
       success: true,
+      user,
     };
+  }
+
+  async resetPassword({
+    token,
+    newPassword,
+  }: {
+    token: string;
+    newPassword: string;
+  }): Promise<{ success: boolean; error?: string }> {
+    const validToken = await this.validateForgotPasswordToken(token);
+
+    if (!validToken.success) {
+      return {
+        success: false,
+        error: validToken.error,
+      };
+    }
+
+    const user = validToken.user;
+    const passwordHash = await PasswordUtils.hashPassword(newPassword);
+
+    // Wrap both operations in a transaction
+    try {
+      await this.databaseService.db.transaction(async (tx) => {
+        // Update user password
+        await tx
+          .update(users)
+          .set({ passwordHash, updatedAt: new Date() })
+          .where(eq(users.id, user.id));
+
+        // Delete password reset tokens for this user (only password_reset type)
+        await tx
+          .delete(emailVerificationTokens)
+          .where(
+            and(
+              eq(emailVerificationTokens.userId, user.id),
+              eq(emailVerificationTokens.type, 'password_reset'),
+            ),
+          );
+      });
+
+      return {
+        success: true,
+      };
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      return {
+        success: false,
+        error: 'Failed to reset password',
+      };
+    }
   }
 }

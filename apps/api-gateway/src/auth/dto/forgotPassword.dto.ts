@@ -26,5 +26,6 @@ export class ResetPasswordDto {
     description: 'Password reset token',
     example: 'resetToken123',
   })
+  @IsString()
   token: string;
 }

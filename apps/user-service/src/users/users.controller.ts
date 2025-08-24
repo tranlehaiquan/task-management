@@ -166,24 +166,11 @@ export class UsersController {
     return this.usersService.validateEmailVerificationToken(token);
   }
 
-  @MessagePattern('user.sendPasswordResetEmail')
-  async sendPasswordResetEmailMessage(email: string): Promise<void> {
-    await this.mailService.transporter.sendMail({
-      to: email,
-      subject: 'Reset your password',
-      text: 'Please reset your password by clicking the link below',
-      html: '<p>Please reset your password by clicking the link below</p>',
-    });
-  }
-
   @MessagePattern('user.forgotPassword')
-  async forgotPassword({ email }: { email: string }): Promise<{
-    success: boolean;
-    error?: string;
-  }> {
+  async forgotPassword({ email }: { email: string }) {
     const user = await this.usersService.findUser({ email });
 
-    if (!user || user.email || !user.isActive) {
+    if (!user || !user.isActive) {
       return {
         success: false,
       };
@@ -197,7 +184,7 @@ export class UsersController {
       );
 
     try {
-      await this.mailService.transporter.sendMail({
+      this.mailService.transporter.sendMail({
         to: user.email,
         subject: 'Reset your password',
         text: 'Please reset your password by clicking the link below',
@@ -216,10 +203,12 @@ export class UsersController {
   }
 
   @MessagePattern('user.validateForgotPasswordToken')
-  async validateForgotPasswordToken(token: string): Promise<{
-    success: boolean;
-    error?: string;
-  }> {
+  async validateForgotPasswordToken(token: string) {
     return this.usersService.validateForgotPasswordToken(token);
+  }
+
+  @MessagePattern('user.reset-password')
+  async resetPassword(params: { token: string; newPassword: string }) {
+    return this.usersService.resetPassword(params);
   }
 }

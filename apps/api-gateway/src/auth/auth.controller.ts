@@ -291,6 +291,20 @@ export class AuthController {
   async resetForgotPassword(
     @Body() resetPasswordDto: ResetPasswordDto,
   ): Promise<{ success: boolean; message?: string }> {
+    const result = await firstValueFrom(
+      this.userService.send<
+        { success: boolean; error?: string },
+        ResetPasswordDto
+      >('user.reset-password', resetPasswordDto),
+    );
+
+    if (!result.success) {
+      throw new HttpException(
+        result.error || 'Failed to reset password',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
     return {
       success: true,
       message: 'Password reset successfully',

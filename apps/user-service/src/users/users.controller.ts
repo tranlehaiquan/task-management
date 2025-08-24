@@ -214,4 +214,12 @@ export class UsersController {
       success: true,
     };
   }
+
+  @MessagePattern('user.validateForgotPasswordToken')
+  async validateForgotPasswordToken(token: string): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    return this.usersService.validateForgotPasswordToken(token);
+  }
 }

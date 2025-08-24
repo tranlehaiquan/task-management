@@ -7,6 +7,7 @@ import {
   Get,
   Post,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
@@ -33,6 +34,7 @@ import { CurrentUser } from 'src/decorators/user.decorator';
 import type { CurrentUser as CurrentUserType } from '@task-mgmt/shared-types';
 import { AuthGuard } from 'src/guards/auth.guards';
 import { ForgotPasswordDto } from './dto';
+import { ResetPasswordDto } from './dto/forgotPassword.dto';
 
 @ApiTags('Authentication')
 @Controller('api/auth')
@@ -248,20 +250,50 @@ export class AuthController {
     const { email } = forgotPassword;
 
     // Let user service handle the entire forgot password flow
-    const result = await firstValueFrom(
+    await firstValueFrom(
       this.userService.send<
         { success: boolean; error?: string },
         { email: string }
       >('user.forgotPassword', { email }),
     );
 
-    console.log(result);
-
-    // Always return success for security (don't reveal if email exists)
     return {
       success: true,
       message:
         'If an account with that email exists, a password reset link has been sent.',
+    };
+  }
+
+  @Get('validate-forgot-password-token')
+  async validateForgotPasswordToken(
+    @Query('token') token: string,
+  ): Promise<{ success: boolean; error?: string }> {
+    const result = await firstValueFrom(
+      this.userService.send<{ success: boolean; error?: string }, string>(
+        'user.validateForgotPasswordToken',
+        token,
+      ),
+    );
+
+    if (!result.success) {
+      throw new HttpException(
+        result.error || 'Invalid or expired forgot password token',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return {
+      success: true,
+    };
+  }
+
+  @Post('reset-password')
+  async resetForgotPassword(
+    @Body() resetPasswordDto: ResetPasswordDto,
+  ): Promise<{ success: boolean; message?: string }> {
+    return {
+      success: true,
+      message: 'Password reset successfully',
     };
   }
 }

@@ -302,4 +302,44 @@ export class UsersService {
 
     return { success: true, userId: emailVerificationToken.userId };
   }
+
+  /**
+   *  Validate a forgot password token
+   * @param token - The forgot password token
+   * @returns
+   */
+  async validateForgotPasswordToken(token: string): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    const [emailVerificationToken] = await this.databaseService.db
+      .select()
+      .from(emailVerificationTokens)
+      .where(
+        and(
+          eq(emailVerificationTokens.token, token),
+          eq(emailVerificationTokens.type, 'password_reset'),
+        ),
+      )
+      .limit(1);
+
+    if (!emailVerificationToken) {
+      return { success: false, error: 'Token not found' };
+    }
+
+    // Check if token has expired
+    const now = new Date();
+    if (emailVerificationToken.expiresAt < now) {
+      return { success: false, error: 'Token has expired' };
+    }
+
+    const user = await this.getUserById(emailVerificationToken.userId);
+    if (!user) {
+      return { success: false, error: 'User not found' };
+    }
+
+    return {
+      success: true,
+    };
+  }
 }

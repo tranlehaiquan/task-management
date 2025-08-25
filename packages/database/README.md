@@ -101,18 +101,98 @@ const tasksWithDetails = await db
 
 ## Schema
 
-The database includes the following tables:
+The database currently includes the following implemented tables:
 
-- **users** - User accounts and profiles
+### ✅ **Implemented Tables:**
+- **users** - User accounts and profiles with authentication
+- **email_verification_tokens** - Email verification and password reset tokens
+
+### 🚧 **Planned Tables (Schema Defined):**
 - **projects** - Project management
 - **tasks** - Task tracking with status and priority
 - **time_entries** - Time tracking for tasks
 - **notifications** - User notifications
+
+### Current Database Schema
+
+#### Users Table
+```sql
+CREATE TABLE "users" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "email" varchar(255) UNIQUE NOT NULL,
+  "password_hash" varchar(255) NOT NULL,
+  "name" varchar(255) NOT NULL,
+  "avatar_url" varchar(500),
+  "is_active" boolean DEFAULT true NOT NULL,
+  "is_email_verified" boolean DEFAULT false NOT NULL,
+  "last_login_at" timestamp,
+  "created_at" timestamp DEFAULT now() NOT NULL,
+  "updated_at" timestamp DEFAULT now() NOT NULL
+);
+```
+
+#### Email Verification Tokens Table
+```sql
+CREATE TABLE "email_verification_tokens" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "user_id" uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  "email" varchar(255) NOT NULL,
+  "token" varchar(255) UNIQUE NOT NULL,
+  "type" varchar(50) DEFAULT 'email_verification' NOT NULL,
+  "expires_at" timestamp NOT NULL,
+  "used_at" timestamp,
+  "created_at" timestamp DEFAULT now() NOT NULL
+);
+```
 
 ## Types
 
 All schemas export TypeScript types:
 
 ```typescript
-import type { User, NewUser, Task, NewTask, Project, NewProject } from '@task-mgmt/database';
+// Currently available types
+import type { 
+  User, 
+  NewUser, 
+  EmailVerificationToken, 
+  NewEmailVerificationToken 
+} from '@task-mgmt/database';
+
+// Planned types (schema defined but not implemented)
+import type { 
+  Task, 
+  NewTask, 
+  Project, 
+  NewProject,
+  TimeEntry,
+  NewTimeEntry,
+  Notification,
+  NewNotification
+} from '@task-mgmt/database';
+```
+
+### Working Examples
+
+```typescript
+// Create a new user
+const newUser: NewUser = {
+  email: 'user@example.com',
+  passwordHash: 'hashed_password',
+  name: 'John Doe'
+};
+
+const user = await db.insert(users).values(newUser).returning();
+
+// Create email verification token
+const token: NewEmailVerificationToken = {
+  userId: user.id,
+  email: user.email,
+  token: 'secure-random-token',
+  type: 'email_verification',
+  expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+};
+
+const verificationToken = await db.insert(emailVerificationTokens)
+  .values(token)
+  .returning();
 ```

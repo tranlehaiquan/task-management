@@ -12,15 +12,23 @@ A modern, scalable task management platform built with microservices architectur
 
 **Foundation Phase Complete ✅** - The core infrastructure is fully implemented and ready for development:
 
-- 🏗️ **Monorepo Structure**: Complete pnpm + Turbo setup with 6 microservices
-- 🛡️ **Authentication System**: JWT-based auth service with user management
-- 🗄️ **Database Layer**: PostgreSQL with Drizzle ORM, complete schema design
-- 🌐 **API Gateway**: HTTP REST API with Swagger docs, microservice routing
-- 🔗 **Service Communication**: TCP-based microservice messaging
+- 🏗️ **Monorepo Structure**: Complete pnpm + Turbo setup with 7 microservices
+- 🛡️ **Authentication System**: JWT-based auth service with full user authentication flow
+- 🗄️ **Database Layer**: PostgreSQL with Drizzle ORM, implemented schema for users, projects, tasks, time_entries, notifications
+- 🌐 **API Gateway**: HTTP REST API with comprehensive Swagger docs, microservice routing, authentication guards
+- 🔗 **Service Communication**: TCP-based microservice messaging with full auth and user services
 - 📝 **Type Safety**: Full TypeScript support with shared types across services
 - 🧪 **Testing Ready**: Jest scaffolding and e2e test setup for all services
+- ✉️ **Email Service**: Email verification and password reset functionality with SMTP integration
+- 🔐 **User Management**: Complete user CRUD, authentication, email verification, password reset
 
-**Ready to build core business features**: Project management, task CRUD, and frontend integration.
+**Current Working Features**:
+- ✅ User registration and login with JWT tokens
+- ✅ Email verification system
+- ✅ Password reset flow with secure tokens
+- ✅ Protected API endpoints with authentication guards
+- ✅ Comprehensive API documentation with Swagger
+- ✅ User management operations (CRUD)
 
 ## 🏗️ Architecture
 
@@ -156,9 +164,9 @@ graph TB
 ```
 task-management/
 ├── apps/                          # Runnable applications
-│   ├── api-gateway/              # Main API gateway ✅
-│   ├── auth-service/             # Authentication service ✅
-│   ├── user-service/             # User management ✅
+│   ├── api-gateway/              # Main API gateway ✅ (HTTP REST API with Swagger)
+│   ├── auth-service/             # Authentication service ✅ (JWT token management)
+│   ├── user-service/             # User management ✅ (CRUD, auth, email verification)
 │   ├── project-service/          # Project management (scaffolded)
 │   ├── task-service/             # Task management (scaffolded)
 │   ├── time-tracking-service/    # Time tracking (scaffolded)
@@ -166,9 +174,10 @@ task-management/
 │   └── web-client/               # React frontend (planned)
 │
 ├── packages/                      # Shared packages
-│   ├── database/                 # Drizzle ORM + PostgreSQL schemas ✅
-│   ├── shared-types/             # TypeScript interfaces ✅
-│   ├── shared-config/            # Configuration utilities ✅
+│   ├── database/                 # Drizzle ORM + PostgreSQL schemas ✅ (users, email tokens)
+│   ├── mail/                     # Email service ✅ (SMTP with nodemailer)
+│   ├── shared-types/             # TypeScript interfaces ✅ (auth types)
+│   ├── shared-config/            # Configuration utilities ✅ (service ports)
 │   ├── shared-utils/             # Common utilities (scaffolded)
 │   └── shared-package/           # Additional utilities (scaffolded)
 │
@@ -235,19 +244,29 @@ The API Gateway currently provides these working endpoints:
 
 **Authentication:**
 
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `POST /api/auth/forgot-password` - Password reset request
+- `POST /api/auth/register` - User registration with email, password, and name
+- `POST /api/auth/login` - User login with email and password (returns JWT token)
+- `GET /api/auth/me` - Get current authenticated user information (protected)
+- `POST /api/auth/verify-email` - Send email verification link (protected)
+- `POST /api/auth/verify-email-token` - Verify email with token
+- `POST /api/auth/forgot-password` - Request password reset via email
+- `GET /api/auth/validate-forgot-password-token` - Validate password reset token
+- `POST /api/auth/reset-password` - Reset password using token
 
 **User Management:**
 
-- `GET /api/users` - List all users (protected)
-- `POST /api/users` - Create new user
-- `GET /api/users/:id` - Get user by ID
-- `PUT /api/users/:id` - Update user
-- `DELETE /api/users/:id` - Delete user
+- `GET /api/users` - Get all users (protected, requires JWT)
+- `GET /api/users/:id` - Get user by ID (protected, requires JWT)
 
-All endpoints include comprehensive Swagger documentation with examples and validation rules.
+**Features:**
+- 🔒 JWT-based authentication with Bearer token support
+- 📧 Email verification system with secure tokens
+- 🔑 Password reset flow with time-limited tokens
+- 🛡️ Protected endpoints with authentication guards
+- ✅ Comprehensive input validation and error handling
+- 📚 Full Swagger/OpenAPI documentation with examples
+
+All endpoints include comprehensive Swagger documentation with examples, validation rules, and interactive testing capabilities.
 
 ## 📜 Available Scripts
 
@@ -402,12 +421,14 @@ Individual microservices communicate via TCP and don't expose HTTP endpoints dir
 ### Phase 1: Foundation & Core Infrastructure ✅ (COMPLETED)
 
 - [x] **Monorepo Setup**: pnpm + Turbo with workspace configuration
-- [x] **Database Infrastructure**: PostgreSQL with Drizzle ORM, complete schema for users, projects, tasks, time_entries, notifications
-- [x] **Shared Packages**: Database package with type-safe schema, shared-config with service ports, shared-types with auth types
-- [x] **API Gateway**: HTTP REST API with Swagger documentation, CORS, validation, JWT auth setup
+- [x] **Database Infrastructure**: PostgreSQL with Drizzle ORM, implemented schema for users, email verification tokens
+- [x] **Shared Packages**: Database package with type-safe schema, shared-config with service ports, shared-types with auth types, mail service package
+- [x] **API Gateway**: HTTP REST API with comprehensive Swagger documentation, CORS, validation, JWT auth guards
 - [x] **Auth Service**: JWT token generation/validation microservice with TCP communication
-- [x] **User Service**: Complete CRUD operations with password hashing, user validation, TCP microservice communication
+- [x] **User Service**: Complete user CRUD operations with password hashing, email verification, password reset, TCP microservice communication
+- [x] **Email Service**: SMTP integration with nodemailer for email verification and password reset
 - [x] **Service Communication**: TCP-based microservice architecture with message patterns
+- [x] **Authentication Flow**: Complete user registration, login, email verification, password reset workflows
 - [x] **Type Safety**: Full TypeScript support across all services with shared types
 - [x] **Development Tools**: ESLint, Prettier, Jest testing scaffolding, e2e test setup
 
@@ -470,6 +491,7 @@ Individual microservices communicate via TCP and don't expose HTTP endpoints dir
 
 ```bash
 # Database (Drizzle ORM)
+DATABASE_URL=postgresql://postgres:your_password@localhost:5432/task_management
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
@@ -478,7 +500,16 @@ DB_NAME=task_management
 DB_SSL=false
 
 # JWT Authentication
-JWT_SECRET=your-super-secret-jwt-key
+JWT_SECRET=your-super-secret-jwt-key-at-least-32-characters
+
+# Email Service (SMTP)
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USER=your-email@gmail.com
+MAIL_PASS=your-app-password
+
+# Frontend URL (for email links)
+FRONTEND_URL=http://localhost:3000
 
 # Services (TCP Microservices)
 API_GATEWAY_PORT=3000

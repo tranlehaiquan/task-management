@@ -16,14 +16,11 @@ export class UsersController {
     private readonly mailService: MailService,
   ) {}
 
-  getFrontEndUrl() {
-    // Validate and normalize FRONTEND_URL
+  getFrontEndUrl(): string {
     const frontendUrl = process.env.FRONTEND_URL;
     if (!frontendUrl) {
-      return '';
+      throw new Error('FRONTEND_URL environment variable is not configured');
     }
-
-    // Remove trailing slash if present to normalize URL
     return frontendUrl.replace(/\/$/, '');
   }
 
@@ -181,13 +178,14 @@ export class UsersController {
       );
 
     try {
-      this.mailService.transporter.sendMail({
+      await this.mailService.transporter.sendMail({
         to: user.email,
         subject: 'Reset your password',
         text: 'Please reset your password by clicking the link below',
         html: `<p>Please reset your password by clicking the link below <a href="${this.getFrontEndUrl()}/reset-password/${passwordResetTokenRecord.token}">${this.getFrontEndUrl()}/reset-password/${passwordResetTokenRecord.token}</a></p>`,
       });
-    } catch {
+    } catch (error) {
+      console.log(error);
       return {
         success: false,
         error: `Failed to send password reset email`,
@@ -200,7 +198,8 @@ export class UsersController {
   }
 
   @MessagePattern('user.validateForgotPasswordToken')
-  async validateForgotPasswordToken(token: string) {
+  async validateForgotPasswordToken(payload: { token: string }) {
+    const { token } = payload;
     return this.usersService.validateForgotPasswordToken(token);
   }
 

@@ -8,6 +8,7 @@ import {
   Post,
   UseGuards,
   Query,
+  Logger,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
@@ -39,6 +40,7 @@ import { ResetPasswordDto } from './dto/forgotPassword.dto';
 @ApiTags('Authentication')
 @Controller('api/auth')
 export class AuthController {
+  private readonly logger = new Logger(AuthController.name);
   constructor(
     @Inject('AUTH_SERVICE') private readonly authService: ClientProxy,
     @Inject('USER_SERVICE') private readonly userService: ClientProxy,
@@ -250,12 +252,19 @@ export class AuthController {
     const { email } = forgotPassword;
 
     // Let user service handle the entire forgot password flow
-    await firstValueFrom(
-      this.userService.send<
-        { success: boolean; error?: string },
-        { email: string }
-      >('user.forgotPassword', { email }),
-    );
+    try {
+      await firstValueFrom(
+        this.userService.send<
+          { success: boolean; error?: string },
+          { email: string }
+        >('user.forgotPassword', { email }),
+      );
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      const stack = error instanceof Error ? error.stack : undefined;
+      this.logger.error('Failed to trigger forgot password flow', stack);
+      this.logger.debug(`Swallowing forgot password error: ${message}`);
+    }
 
     return {
       success: true,
@@ -269,10 +278,12 @@ export class AuthController {
     @Query('token') token: string,
   ): Promise<{ success: boolean; error?: string }> {
     const result = await firstValueFrom(
-      this.userService.send<{ success: boolean; error?: string }, string>(
-        'user.validateForgotPasswordToken',
-        token,
-      ),
+      this.userService.send<
+        { success: boolean; error?: string },
+        {
+          token: string;
+        }
+      >('user.validateForgotPasswordToken', { token }),
     );
 
     if (!result.success) {

@@ -5,6 +5,7 @@ import {
   emailVerificationTokens,
   type NewUser,
   type User,
+  EmailVerificationToken,
 } from '@task-mgmt/database';
 import { eq, and, ilike, type SQL } from 'drizzle-orm';
 import { PasswordUtils } from '../utils/password.utils';
@@ -216,7 +217,10 @@ export class UsersService {
     type: 'email_verification' | 'password_reset' = 'email_verification',
   ) {
     const token = randomString(32);
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 5); // 5 days from now
+    const expiresAt =
+      type === 'password_reset'
+        ? new Date(Date.now() + 1000 * 60 * 60) // 1 hour
+        : new Date(Date.now() + 1000 * 60 * 60 * 24 * 5); // 5 days
 
     // Check if there is an existing email verification token for this user
     const [existingEmailVerificationToken] = await this.databaseService.db
@@ -230,26 +234,27 @@ export class UsersService {
       )
       .limit(1);
 
-    if (existingEmailVerificationToken) {
-      // delete the existing token
-      await this.databaseService.db
-        .delete(emailVerificationTokens)
-        .where(
-          eq(emailVerificationTokens.id, existingEmailVerificationToken.id),
-        );
-    }
-
-    const [emailVerificationTokenRecord] = await this.databaseService.db
-      .insert(emailVerificationTokens)
-      .values({
-        userId,
-        email,
-        token,
-        expiresAt,
-        type,
-      })
-      .returning();
-    return emailVerificationTokenRecord;
+    let emailVerificationTokenRecord: EmailVerificationToken;
+    await this.databaseService.db.transaction(async (tx) => {
+      if (existingEmailVerificationToken) {
+        await tx
+          .delete(emailVerificationTokens)
+          .where(
+            eq(emailVerificationTokens.id, existingEmailVerificationToken.id),
+          );
+      }
+      [emailVerificationTokenRecord] = await tx
+        .insert(emailVerificationTokens)
+        .values({
+          userId,
+          email,
+          token,
+          expiresAt,
+          type,
+        })
+        .returning();
+    });
+    return emailVerificationTokenRecord!;
   }
 
   /**

@@ -20,7 +20,7 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A[User] -->|POST /forgot-password| B(API Gateway)
+    A[User] -->|POST /api/auth/forgot-password| B(API Gateway)
     B --> C(Rate Limiting Check)
     C -->|Too many requests| D[Return 429 - Rate Limited]
     C -->|Within limits| E{Does account exist?}
@@ -58,7 +58,7 @@ flowchart TD
     A[User clicks reset link] --> B[Frontend extracts token from URL]
 
     subgraph "API 1: Validate Token"
-        B -->|GET /api/validate-forgot-password-token?token=xyz| C(Rate Limiting)
+        B -->|GET /api/auth/validate-forgot-password-token?token=xyz| C(Rate Limiting)
         C --> D{Token format valid?}
         D -->|No| E[400: Invalid token format]
         D -->|Yes| F[Hash token for lookup]
@@ -73,7 +73,7 @@ flowchart TD
 
     subgraph "API 2: Reset Password"
         K --> L[User enters new password]
-        L -->|POST /api/reset-password| M(Rate Limiting)
+        L -->|POST /api/auth/reset-password| M(Rate Limiting)
         M --> N{Password validation}
         N -->|Fail| O[400: Validation errors]
         N -->|Pass| P{Token still valid?}

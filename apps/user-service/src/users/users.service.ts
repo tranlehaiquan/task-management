@@ -5,6 +5,7 @@ import {
   emailVerificationTokens,
   type NewUser,
   type User,
+  EmailVerificationToken,
 } from '@task-mgmt/database';
 import { eq, and, ilike, type SQL } from 'drizzle-orm';
 import { PasswordUtils } from '../utils/password.utils';
@@ -207,40 +208,53 @@ export class UsersService {
    * Create or update an email verification token for a user
    * @param userId - The user ID
    * @param email - The user's email
+   * @param type - The type of token ('email_verification' or 'password_reset')
    * @returns The email verification token record
    */
-  async createEmailVerificationToken(userId: string, email: string) {
+  async createVerificationToken(
+    userId: string,
+    email: string,
+    type: 'email_verification' | 'password_reset' = 'email_verification',
+  ) {
     const token = randomString(32);
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 5); // 5 days from now
+    const expiresAt =
+      type === 'password_reset'
+        ? new Date(Date.now() + 1000 * 60 * 60) // 1 hour
+        : new Date(Date.now() + 1000 * 60 * 60 * 24 * 5); // 5 days
 
     // Check if there is an existing email verification token for this user
     const [existingEmailVerificationToken] = await this.databaseService.db
       .select()
       .from(emailVerificationTokens)
-      .where(eq(emailVerificationTokens.userId, userId))
+      .where(
+        and(
+          eq(emailVerificationTokens.userId, userId),
+          eq(emailVerificationTokens.type, type),
+        ),
+      )
       .limit(1);
 
-    if (!existingEmailVerificationToken) {
-      const [emailVerificationTokenRecord] = await this.databaseService.db
+    let emailVerificationTokenRecord: EmailVerificationToken;
+    await this.databaseService.db.transaction(async (tx) => {
+      if (existingEmailVerificationToken) {
+        await tx
+          .delete(emailVerificationTokens)
+          .where(
+            eq(emailVerificationTokens.id, existingEmailVerificationToken.id),
+          );
+      }
+      [emailVerificationTokenRecord] = await tx
         .insert(emailVerificationTokens)
         .values({
           userId,
           email,
           token,
           expiresAt,
+          type,
         })
         .returning();
-      return emailVerificationTokenRecord;
-    }
-
-    // update expire time
-    const [updatedToken] = await this.databaseService.db
-      .update(emailVerificationTokens)
-      .set({ expiresAt })
-      .where(eq(emailVerificationTokens.id, existingEmailVerificationToken.id))
-      .returning();
-
-    return updatedToken;
+    });
+    return emailVerificationTokenRecord!;
   }
 
   /**
@@ -268,7 +282,6 @@ export class UsersService {
       return { success: false, error: 'Token has expired' };
     }
 
-    // Check if user is valid and not already verified
     const user = await this.getUserById(emailVerificationToken.userId);
     if (!user) {
       return { success: false, error: 'User not found' };
@@ -293,5 +306,103 @@ export class UsersService {
       .where(eq(emailVerificationTokens.token, token));
 
     return { success: true, userId: emailVerificationToken.userId };
+  }
+
+  /**
+   *  Validate a forgot password token
+   * @param token - The forgot password token
+   * @returns
+   */
+  async validateForgotPasswordToken(token: string): Promise<
+    | {
+        success: false;
+        error?: string;
+      }
+    | {
+        success: true;
+        user: Omit<User, 'passwordHash'>;
+      }
+  > {
+    const [forgotPasswordToken] = await this.databaseService.db
+      .select()
+      .from(emailVerificationTokens)
+      .where(
+        and(
+          eq(emailVerificationTokens.token, token),
+          eq(emailVerificationTokens.type, 'password_reset'),
+        ),
+      )
+      .limit(1);
+
+    if (!forgotPasswordToken) {
+      return { success: false, error: 'Token not found' };
+    }
+
+    // Check if token has expired
+    const now = new Date();
+    if (forgotPasswordToken.expiresAt < now) {
+      return { success: false, error: 'Token has expired' };
+    }
+
+    const user = await this.getUserById(forgotPasswordToken.userId);
+    if (!user) {
+      return { success: false, error: 'User not found' };
+    }
+
+    return {
+      success: true,
+      user,
+    };
+  }
+
+  async resetPassword({
+    token,
+    newPassword,
+  }: {
+    token: string;
+    newPassword: string;
+  }): Promise<{ success: boolean; error?: string }> {
+    const validToken = await this.validateForgotPasswordToken(token);
+
+    if (!validToken.success) {
+      return {
+        success: false,
+        error: validToken.error,
+      };
+    }
+
+    const user = validToken.user;
+    const passwordHash = await PasswordUtils.hashPassword(newPassword);
+
+    // Wrap both operations in a transaction
+    try {
+      await this.databaseService.db.transaction(async (tx) => {
+        // Update user password
+        await tx
+          .update(users)
+          .set({ passwordHash, updatedAt: new Date() })
+          .where(eq(users.id, user.id));
+
+        // Delete password reset tokens for this user (only password_reset type)
+        await tx
+          .delete(emailVerificationTokens)
+          .where(
+            and(
+              eq(emailVerificationTokens.userId, user.id),
+              eq(emailVerificationTokens.type, 'password_reset'),
+            ),
+          );
+      });
+
+      return {
+        success: true,
+      };
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      return {
+        success: false,
+        error: 'Failed to reset password',
+      };
+    }
   }
 }

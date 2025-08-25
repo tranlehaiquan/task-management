@@ -16,6 +16,14 @@ export class UsersController {
     private readonly mailService: MailService,
   ) {}
 
+  getFrontEndUrl(): string {
+    const frontendUrl = process.env.FRONTEND_URL;
+    if (!frontendUrl) {
+      throw new Error('FRONTEND_URL environment variable is not configured');
+    }
+    return frontendUrl.replace(/\/$/, '');
+  }
+
   // Message patterns for microservice communication
   @MessagePattern('user.create')
   async createUserMessage(userData: CreateNewUserDto): Promise<SanitizedUser> {
@@ -117,28 +125,16 @@ export class UsersController {
       };
     }
 
-    // Validate and normalize FRONTEND_URL
-    const frontendUrl = process.env.FRONTEND_URL;
-    if (!frontendUrl) {
-      return {
-        success: false,
-        error: 'FRONTEND_URL environment variable is not configured',
-      };
-    }
-
-    // Remove trailing slash if present to normalize URL
-    const normalizedFrontendUrl = frontendUrl.replace(/\/$/, '');
-
     // Create email verification token using service
     const emailVerificationTokenRecord =
-      await this.usersService.createEmailVerificationToken(userId, user.email);
+      await this.usersService.createVerificationToken(userId, user.email);
 
     try {
       await this.mailService.transporter.sendMail({
         to: user.email,
         subject: 'Verify your email',
         text: 'Please verify your email by clicking the link below',
-        html: `<p>Please verify your email by clicking the link below <a href="${normalizedFrontendUrl}/verify-email/${emailVerificationTokenRecord.token}">${normalizedFrontendUrl}/verify-email/${emailVerificationTokenRecord.token}</a></p>`,
+        html: `<p>Please verify your email by clicking the link below <a href="${this.getFrontEndUrl()}/verify-email/${emailVerificationTokenRecord.token}">${this.getFrontEndUrl()}/verify-email/${emailVerificationTokenRecord.token}</a></p>`,
       });
 
       return { success: true };
@@ -164,13 +160,51 @@ export class UsersController {
     return this.usersService.validateEmailVerificationToken(token);
   }
 
-  @MessagePattern('user.sendPasswordResetEmail')
-  async sendPasswordResetEmailMessage(email: string): Promise<void> {
-    await this.mailService.transporter.sendMail({
-      to: email,
-      subject: 'Reset your password',
-      text: 'Please reset your password by clicking the link below',
-      html: '<p>Please reset your password by clicking the link below</p>',
-    });
+  @MessagePattern('user.forgotPassword')
+  async forgotPassword({ email }: { email: string }) {
+    const user = await this.usersService.findUser({ email });
+
+    if (!user || !user.isActive) {
+      return {
+        success: false,
+      };
+    }
+
+    const passwordResetTokenRecord =
+      await this.usersService.createVerificationToken(
+        user.id,
+        user.email,
+        'password_reset',
+      );
+
+    try {
+      await this.mailService.transporter.sendMail({
+        to: user.email,
+        subject: 'Reset your password',
+        text: 'Please reset your password by clicking the link below',
+        html: `<p>Please reset your password by clicking the link below <a href="${this.getFrontEndUrl()}/reset-password/${passwordResetTokenRecord.token}">${this.getFrontEndUrl()}/reset-password/${passwordResetTokenRecord.token}</a></p>`,
+      });
+    } catch (error) {
+      console.log(error);
+      return {
+        success: false,
+        error: `Failed to send password reset email`,
+      };
+    }
+
+    return {
+      success: true,
+    };
+  }
+
+  @MessagePattern('user.validateForgotPasswordToken')
+  async validateForgotPasswordToken(payload: { token: string }) {
+    const { token } = payload;
+    return this.usersService.validateForgotPasswordToken(token);
+  }
+
+  @MessagePattern('user.reset-password')
+  async resetPassword(params: { token: string; newPassword: string }) {
+    return this.usersService.resetPassword(params);
   }
 }

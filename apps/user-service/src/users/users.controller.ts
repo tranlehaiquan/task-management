@@ -20,10 +20,7 @@ export class UsersController {
     // Validate and normalize FRONTEND_URL
     const frontendUrl = process.env.FRONTEND_URL;
     if (!frontendUrl) {
-      return {
-        success: false,
-        error: 'FRONTEND_URL environment variable is not configured',
-      };
+      return '';
     }
 
     // Remove trailing slash if present to normalize URL
@@ -190,7 +187,7 @@ export class UsersController {
         text: 'Please reset your password by clicking the link below',
         html: `<p>Please reset your password by clicking the link below <a href="${this.getFrontEndUrl()}/reset-password/${passwordResetTokenRecord.token}">${this.getFrontEndUrl()}/reset-password/${passwordResetTokenRecord.token}</a></p>`,
       });
-    } catch (error) {
+    } catch {
       return {
         success: false,
         error: `Failed to send password reset email`,

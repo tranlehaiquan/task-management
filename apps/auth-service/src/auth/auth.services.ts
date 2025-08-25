@@ -31,10 +31,12 @@ export class AuthService {
         success: true,
         data,
       };
-    } catch (e) {
+    } catch (error: unknown) {
+      const errorMsg =
+        error instanceof Error ? `${error.name}: ${error.message}` : 'Invalid token';
       return {
         success: false,
-        error: e.name || e.message,
+        error: errorMsg,
       };
     }
   }

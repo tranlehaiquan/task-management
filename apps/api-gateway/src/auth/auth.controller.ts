@@ -9,6 +9,7 @@ import {
   UseGuards,
   Query,
   Logger,
+  Delete,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
@@ -36,6 +37,7 @@ import type { CurrentUser as CurrentUserType } from '@task-mgmt/shared-types';
 import { AuthGuard } from 'src/guards/auth.guards';
 import { ForgotPasswordDto } from './dto';
 import { ResetPasswordDto } from './dto/forgotPassword.dto';
+import { ChangePasswordDto } from './dto/changePassword.dto';
 
 @ApiTags('Authentication')
 @Controller('api/auth')
@@ -319,6 +321,70 @@ export class AuthController {
     return {
       success: true,
       message: 'Password reset successfully',
+    };
+  }
+
+  // change password
+  @Post('change-password')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(AuthGuard)
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @CurrentUser() user: CurrentUserType,
+  ) {
+    const { id } = user;
+    const result = await firstValueFrom(
+      this.userService.send<
+        { success: boolean; error?: string },
+        {
+          userId: string;
+          currentPassword: string;
+          newPassword: string;
+        }
+      >('user.update-password', {
+        userId: id,
+        currentPassword: changePasswordDto.currentPassword,
+        newPassword: changePasswordDto.newPassword,
+      }),
+    );
+
+    if (result.success) {
+      return {
+        success: true,
+        message: 'Password changed successfully',
+      };
+    }
+
+    return {
+      success: false,
+      message: 'Failed to change password',
+    };
+  }
+
+  // delete account
+  @Delete('account')
+  @ApiBearerAuth('JWT-auth')
+  @UseGuards(AuthGuard)
+  async deleteAccount(@CurrentUser() user: CurrentUserType) {
+    const { id } = user;
+
+    const result = await firstValueFrom(
+      this.userService.send<
+        { success: boolean; error?: string },
+        { userId: string }
+      >('user.delete-account', { userId: id }),
+    );
+
+    if (result.success) {
+      return {
+        success: true,
+        message: 'Account deleted successfully',
+      };
+    }
+
+    return {
+      success: false,
+      message: 'Failed to delete account',
     };
   }
 }

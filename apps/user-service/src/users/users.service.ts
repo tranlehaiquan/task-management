@@ -405,4 +405,50 @@ export class UsersService {
       };
     }
   }
+
+  async updatePassword(params: {
+    userId: string;
+    currentPassword: string;
+    newPassword: string;
+  }) {
+    const { userId, currentPassword, newPassword } = params;
+    const user = await this.findUserInternal({ id: userId });
+    if (!user) {
+      return { success: false, error: 'User not found' };
+    }
+
+    const isPasswordValid = await PasswordUtils.comparePassword(
+      currentPassword,
+      user.passwordHash,
+    );
+
+    if (!isPasswordValid) {
+      return { success: false, error: 'Current password is incorrect' };
+    }
+
+    const newPasswordHash = await PasswordUtils.hashPassword(newPassword);
+
+    try {
+      await this.databaseService.db
+        .update(users)
+        .set({ passwordHash: newPasswordHash, updatedAt: new Date() })
+        .where(eq(users.id, userId));
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating password:', error);
+      return { success: false, error: 'Failed to update password' };
+    }
+  }
+
+  async deleteAccount(params: { userId: string }) {
+    const { userId } = params;
+    try {
+      await this.databaseService.db.delete(users).where(eq(users.id, userId));
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      return { success: false, error: 'Failed to delete account' };
+    }
+  }
 }

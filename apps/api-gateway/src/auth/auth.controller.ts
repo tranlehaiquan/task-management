@@ -10,6 +10,8 @@ import {
   Query,
   Logger,
   Delete,
+  BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import {
@@ -21,6 +23,7 @@ import {
   ApiConflictResponse,
   ApiInternalServerErrorResponse,
   ApiBearerAuth,
+  ApiOkResponse,
 } from '@nestjs/swagger';
 import LoginDto from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
@@ -29,6 +32,7 @@ import {
   ErrorResponseDto,
   ConflictErrorResponseDto,
 } from './dto/auth-response.dto';
+import { DeleteAccountResponse } from './dto/delete-account-response.dto';
 import { EmailVerifyDto } from './dto/email-verify.dto';
 import { firstValueFrom } from 'rxjs';
 import { type User } from '@task-mgmt/database';
@@ -361,30 +365,59 @@ export class AuthController {
     };
   }
 
-  // delete account
   @Delete('account')
+  @ApiOperation({ 
+    summary: 'Delete user account', 
+    description: 'Permanently deletes the authenticated user account and all associated data' 
+  })
+  @ApiOkResponse({
+    description: 'Account deleted successfully',
+    type: DeleteAccountResponse,
+  })
+  @ApiBadRequestResponse({
+    description: 'Bad request - user not found or validation failed',
+    type: ErrorResponseDto,
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Internal server error during account deletion',
+    type: ErrorResponseDto,
+  })
   @ApiBearerAuth('JWT-auth')
   @UseGuards(AuthGuard)
-  async deleteAccount(@CurrentUser() user: CurrentUserType) {
+  async deleteAccount(@CurrentUser() user: CurrentUserType): Promise<DeleteAccountResponse> {
     const { id } = user;
 
-    const result = await firstValueFrom(
-      this.userService.send<
-        { success: boolean; error?: string },
-        { userId: string }
-      >('user.delete-account', { userId: id }),
-    );
+    try {
+      const result = await firstValueFrom(
+        this.userService.send<
+          { success: boolean; error?: string },
+          { userId: string }
+        >('user.delete-account', { userId: id }),
+      );
 
-    if (result.success) {
-      return {
-        success: true,
-        message: 'Account deleted successfully',
-      };
+      if (result.success) {
+        return {
+          success: true,
+          message: 'Account deleted successfully',
+        };
+      }
+
+      // Handle different types of errors appropriately
+      if (result.error?.includes('not found')) {
+        throw new BadRequestException(result.error || 'User not found');
+      }
+
+      // For other errors, throw as bad request unless it's clearly a server error
+      throw new BadRequestException(result.error || 'Failed to delete account');
+    } catch (error) {
+      // If it's already a NestJS HTTP exception, re-throw it
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+
+      // For unexpected errors, log and throw internal server error
+      this.logger.error('Unexpected error during account deletion:', error);
+      throw new InternalServerErrorException('Internal server error occurred during account deletion');
     }
-
-    return {
-      success: false,
-      message: 'Failed to delete account',
-    };
   }
 }

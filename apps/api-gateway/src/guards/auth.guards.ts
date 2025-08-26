@@ -17,7 +17,7 @@ interface AuthenticatedRequest extends Request {
 @Injectable()
 export class AuthGuard implements CanActivate {
   constructor(
-    @Inject('AUTH_SERVICE') private readonly authService: ClientProxy,
+    @Inject('TOKEN_SERVICE') private readonly tokenService: ClientProxy,
     @Inject('USER_SERVICE') private readonly userService: ClientProxy,
   ) {}
 
@@ -33,11 +33,11 @@ export class AuthGuard implements CanActivate {
     }
 
     const jwtPayload = await firstValueFrom(
-      this.authService.send<
+      this.tokenService.send<
         | { success: true; data: UserJWTPayload }
         | { success: false; error: string },
         string
-      >('auth.validateToken', token),
+      >('token.validateToken', token),
     );
 
     if (jwtPayload.success) {

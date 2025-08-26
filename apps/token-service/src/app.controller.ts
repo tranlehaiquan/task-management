@@ -5,6 +5,6 @@ import { MessagePattern } from '@nestjs/microservices';
 export class AppController {
   @MessagePattern('health-check')
   healthCheck(): string {
-    return 'health-check: auth-service is running';
+    return 'health-check: token-service is running';
   }
 }

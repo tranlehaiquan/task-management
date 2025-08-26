@@ -6,12 +6,12 @@ import { MessagePattern } from '@nestjs/microservices';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @MessagePattern('auth.generateToken')
+  @MessagePattern('token.generateToken')
   generateToken(data: { id: string; email: string; name: string }): string {
     return this.authService.generateToken(data);
   }
 
-  @MessagePattern('auth.validateToken')
+  @MessagePattern('token.validateToken')
   validateToken(token: string): object | null {
     return this.authService.validateToken(token);
   }

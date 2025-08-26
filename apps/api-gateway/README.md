@@ -8,7 +8,7 @@ This is the API Gateway service for the Task Management system, built with NestJ
 - **JWT Token Management**: Secure Bearer token authentication with auth guards
 - **User Management**: Protected user CRUD operations
 - **Swagger Documentation**: Comprehensive interactive API documentation
-- **Microservice Communication**: TCP-based communication with auth-service and user-service
+- **Microservice Communication**: TCP-based communication with token-service and user-service
 - **Input Validation**: Request validation using class-validator with detailed error responses
 - **Error Handling**: Proper HTTP status codes and structured error responses
 - **Email Integration**: Email verification and password reset workflows
@@ -308,9 +308,9 @@ The API documentation includes:
 
 This gateway communicates with:
 
-1. **Auth Service** (Port 3002): 
-   - JWT token generation (`auth.generateToken`)
-   - JWT token validation (`auth.validateToken`)
+1. **Token Service** (Port 3002): 
+   - JWT token generation (`token.generateToken`)
+   - JWT token validation (`token.validateToken`)
 
 2. **User Service** (Port 3001):
    - User CRUD operations (`user.create`, `user.findById`, `user.findAll`)
@@ -319,7 +319,7 @@ This gateway communicates with:
    - Password reset (`user.forgotPassword`, `user.validateForgotPasswordToken`, `user.reset-password`)
 
 **Message Patterns:**
-- Authentication: `auth.generateToken`, `auth.validateToken`
+- Authentication: `token.generateToken`, `token.validateToken`
 - User Management: `user.create`, `user.findById`, `user.findAll`, `user.findUserByEmail`
 - Email Verification: `user.sendVerifyEmailUser`, `user.validateEmailVerificationToken`
 - Password Reset: `user.forgotPassword`, `user.validateForgotPasswordToken`, `user.reset-password`

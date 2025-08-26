@@ -5,8 +5,8 @@ import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { PORTS } from '@task-mgmt/shared-config';
 
 async function bootstrap() {
-  const logger = new Logger('AuthService');
-  const port = process.env.PORT ?? PORTS.AUTH_SERVICE;
+  const logger = new Logger('TokenService');
+  const port = process.env.PORT ?? PORTS.TOKEN_SERVICE;
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
     AppModule,
     {

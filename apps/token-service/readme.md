@@ -1,4 +1,4 @@
-# Auth Service
+# Token Service
 
 JWT token generation and validation microservice for the Task Management system, built with NestJS.
 
@@ -16,7 +16,7 @@ This service operates as a TCP microservice and communicates via message pattern
 
 ### Message Patterns
 
-#### `auth.generateToken`
+#### `token.generateToken`
 Generates a JWT token from user data.
 
 **Input:**
@@ -46,7 +46,7 @@ string // JWT token
 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjEyM2U0NTY3LWU4OWItMTJkMy1hNDU2LTQyNjYxNDE3NDAwMCIsImVtYWlsIjoiam9obkBleGFtcGxlLmNvbSIsIm5hbWUiOiJKb2huIERvZSIsImlhdCI6MTcwNDA2NzIwMCwiZXhwIjoxNzA0MDcwODAwfQ.signature"
 ```
 
-#### `auth.validateToken`
+#### `token.validateToken`
 Validates and decodes a JWT token.
 
 **Input:**
@@ -92,7 +92,7 @@ null
 JWT_SECRET=your-super-secret-jwt-key-at-least-32-characters
 
 # Service Configuration
-AUTH_SERVICE_PORT=3002
+TOKEN_SERVICE_PORT=3002
 
 # Development
 NODE_ENV=development
@@ -128,7 +128,7 @@ npm run start:prod
 ### Running with environment variables
 
 ```bash
-JWT_SECRET=your-secret-key AUTH_SERVICE_PORT=3002 npm run start:dev
+JWT_SECRET=your-secret-key TOKEN_SERVICE_PORT=3002 npm run start:dev
 ```
 
 ## Integration
@@ -140,7 +140,7 @@ import { ClientProxy } from '@nestjs/microservices';
 
 // Generate token
 const token = await firstValueFrom(
-  this.authService.send<string>('auth.generateToken', {
+  this.tokenService.send<string>('token.generateToken', {
     id: user.id,
     email: user.email,
     name: user.name
@@ -149,7 +149,7 @@ const token = await firstValueFrom(
 
 // Validate token
 const payload = await firstValueFrom(
-  this.authService.send<object | null>('auth.validateToken', token)
+  this.tokenService.send<object | null>('token.validateToken', token)
 );
 ```
 
@@ -160,7 +160,7 @@ import { ClientProxy } from '@nestjs/microservices';
 
 // Check if token is valid
 const isValid = await firstValueFrom(
-  this.authService.send<object | null>('auth.validateToken', token)
+  this.tokenService.send<object | null>('token.validateToken', token)
 );
 
 if (isValid) {
@@ -188,8 +188,8 @@ This service communicates with:
 
 **Communication Pattern:**
 ```
-API Gateway → Auth Service (auth.generateToken) → JWT Token
-Other Services → Auth Service (auth.validateToken) → Validation Result
+API Gateway → Token Service (token.generateToken) → JWT Token
+Other Services → Token Service (token.validateToken) → Validation Result
 ```
 
 ## Testing

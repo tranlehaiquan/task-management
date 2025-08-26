@@ -165,7 +165,7 @@ graph TB
 task-management/
 ├── apps/                          # Runnable applications
 │   ├── api-gateway/              # Main API gateway ✅ (HTTP REST API with Swagger)
-│   ├── auth-service/             # Authentication service ✅ (JWT token management)
+│   ├── token-service/            # Token service ✅ (JWT token management)
 │   ├── user-service/             # User management ✅ (CRUD, auth, email verification)
 │   ├── project-service/          # Project management (scaffolded)
 │   ├── task-service/             # Task management (scaffolded)

@@ -42,7 +42,7 @@ import { ResetPasswordDto } from './dto/forgotPassword.dto';
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
   constructor(
-    @Inject('AUTH_SERVICE') private readonly authService: ClientProxy,
+    @Inject('TOKEN_SERVICE') private readonly tokenService: ClientProxy,
     @Inject('USER_SERVICE') private readonly userService: ClientProxy,
   ) {}
 
@@ -93,7 +93,7 @@ export class AuthController {
     user.lastLoginAt = new Date();
 
     const token = await firstValueFrom(
-      this.authService.send<string, User>('auth.generateToken', user),
+      this.tokenService.send<string, User>('token.generateToken', user),
     );
 
     return {
@@ -147,7 +147,7 @@ export class AuthController {
     );
 
     const token = await firstValueFrom(
-      this.authService.send<string, User>('auth.generateToken', newUser),
+      this.tokenService.send<string, User>('token.generateToken', newUser),
     );
 
     return {

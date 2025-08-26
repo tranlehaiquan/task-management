@@ -23,11 +23,11 @@ pnpm run migrate
 ### 2. Start Auth Service (TCP Microservice)
 
 ```bash
-cd apps/auth-service
-AUTH_SERVICE_PORT=3002 JWT_SECRET=your-super-secret-jwt-key pnpm run start:dev
+cd apps/token-service
+TOKEN_SERVICE_PORT=3002 JWT_SECRET=your-super-secret-jwt-key pnpm run start:dev
 ```
 
-This starts the auth service as a TCP microservice on port 3002.
+This starts the token service as a TCP microservice on port 3002.
 
 ### 3. Start User Service (TCP Microservice)
 

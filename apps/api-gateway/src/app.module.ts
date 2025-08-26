@@ -23,11 +23,11 @@ import { LoggerMiddleware } from './middleware/logger.middleware';
     ]),
     ClientsModule.register([
       {
-        name: 'AUTH_SERVICE',
+        name: 'TOKEN_SERVICE',
         transport: Transport.TCP,
         options: {
           host: '0.0.0.0',
-          port: Number(process.env.AUTH_SERVICE_PORT ?? PORTS.AUTH_SERVICE),
+          port: Number(process.env.TOKEN_SERVICE_PORT ?? PORTS.TOKEN_SERVICE),
         },
       },
     ]),

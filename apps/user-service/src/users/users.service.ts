@@ -51,7 +51,7 @@ export class UsersService {
       .from(users)
       .where(eq(users.id, id))
       .limit(1);
-    
+
     return user || null;
   }
 
@@ -282,11 +282,9 @@ export class UsersService {
    * @param token - The verification token
    * @returns Object with validation result and user ID if valid
    */
-  async validateEmailVerificationToken(
-    token: string,
-  ): Promise<{ 
-    success: boolean; 
-    error?: string; 
+  async validateEmailVerificationToken(token: string): Promise<{
+    success: boolean;
+    error?: string;
     userId?: string;
     shouldSendWelcomeEmail?: boolean;
   }> {
@@ -330,8 +328,8 @@ export class UsersService {
       .delete(emailVerificationTokens)
       .where(eq(emailVerificationTokens.token, token));
 
-    return { 
-      success: true, 
+    return {
+      success: true,
       userId: emailVerificationToken.userId,
       shouldSendWelcomeEmail: true,
     };
@@ -470,14 +468,16 @@ export class UsersService {
     }
   }
 
-  async deleteAccount(params: { userId: string }): Promise<{ success: boolean; error?: string }> {
+  async deleteAccount(params: {
+    userId: string;
+  }): Promise<{ success: boolean; error?: string }> {
     const { userId } = params;
-    
+
     try {
       // Use a transaction to ensure all deletions happen atomically
       const result = await this.databaseService.db.transaction(async (tx) => {
         // Step 1: Delete dependent records first (in order of dependencies)
-        
+
         // Delete email verification tokens that reference the user
         await tx
           .delete(emailVerificationTokens)
@@ -493,13 +493,13 @@ export class UsersService {
         //   .delete(timeEntries)
         //   .where(eq(timeEntries.userId, userId));
 
-        // // For tasks: 
+        // // For tasks:
         // // - Delete tasks created by the user
         // // - Set assignee_id to null for tasks assigned to the user (to preserve task data)
         // await tx
         //   .delete(tasks)
         //   .where(eq(tasks.createdById, userId));
-        
+
         // await tx
         //   .update(tasks)
         //   .set({ assigneeId: null, updatedAt: new Date() })
@@ -522,24 +522,25 @@ export class UsersService {
 
       // Check if the user was actually deleted
       if (result.deletedCount === 0) {
-        return { 
-          success: false, 
-          error: 'User not found or could not be deleted' 
+        return {
+          success: false,
+          error: 'User not found or could not be deleted',
         };
       }
 
       return { success: true };
     } catch (error) {
       console.error('Error deleting account:', error);
-      
+
       // Surface the actual error message for better debugging
-      const errorMessage = error instanceof Error 
-        ? error.message 
-        : 'Unknown error occurred during account deletion';
-      
-      return { 
-        success: false, 
-        error: `Failed to delete account: ${errorMessage}` 
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Unknown error occurred during account deletion';
+
+      return {
+        success: false,
+        error: `Failed to delete account: ${errorMessage}`,
       };
     }
   }

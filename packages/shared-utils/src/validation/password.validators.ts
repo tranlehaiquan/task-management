@@ -1,4 +1,8 @@
-import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
+import {
+  registerDecorator,
+  ValidationOptions,
+  ValidationArguments,
+} from 'class-validator';
 
 export interface PasswordValidationOptions {
   minLength?: number;
@@ -43,10 +47,14 @@ export function IsStrongPassword(
           }
 
           const password = value as string;
-          const config = args.constraints[0] as Required<PasswordValidationOptions>;
+          const config = args
+            .constraints[0] as Required<PasswordValidationOptions>;
 
           // Check length constraints
-          if (password.length < config.minLength || password.length > config.maxLength) {
+          if (
+            password.length < config.minLength ||
+            password.length > config.maxLength
+          ) {
             return false;
           }
 
@@ -67,7 +75,9 @@ export function IsStrongPassword(
 
           // Check special characters requirement
           if (config.requireSpecialChars) {
-            const specialCharsRegex = new RegExp(`[${config.allowedSpecialChars.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}]`);
+            const specialCharsRegex = new RegExp(
+              `[${config.allowedSpecialChars.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}]`,
+            );
             if (!specialCharsRegex.test(password)) {
               return false;
             }
@@ -76,15 +86,21 @@ export function IsStrongPassword(
           return true;
         },
         defaultMessage(args: ValidationArguments) {
-          const config = args.constraints[0] as Required<PasswordValidationOptions>;
+          const config = args
+            .constraints[0] as Required<PasswordValidationOptions>;
           const requirements: string[] = [];
 
-          requirements.push(`${config.minLength}-${config.maxLength} characters`);
-          
+          requirements.push(
+            `${config.minLength}-${config.maxLength} characters`,
+          );
+
           if (config.requireUppercase) requirements.push('uppercase letter');
           if (config.requireLowercase) requirements.push('lowercase letter');
           if (config.requireNumbers) requirements.push('number');
-          if (config.requireSpecialChars) requirements.push(`special character (${config.allowedSpecialChars})`);
+          if (config.requireSpecialChars)
+            requirements.push(
+              `special character (${config.allowedSpecialChars})`,
+            );
 
           return `Password must contain: ${requirements.join(', ')}`;
         },
@@ -108,7 +124,7 @@ export function IsPasswordStrong(validationOptions?: ValidationOptions) {
 
 /**
  * Medium password validation with relaxed special character requirement
- * - 8-100 characters  
+ * - 8-100 characters
  * - Uppercase, lowercase, number
  * - Special characters optional
  */

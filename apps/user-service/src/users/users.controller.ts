@@ -166,19 +166,23 @@ export class UsersController {
     userId?: string;
     shouldSendWelcomeEmail?: boolean;
   }> {
-    const result = await this.usersService.validateEmailVerificationToken(token);
-    
+    const result =
+      await this.usersService.validateEmailVerificationToken(token);
+
     // Automatically send welcome email if email verification was successful
     if (result.success && result.shouldSendWelcomeEmail && result.userId) {
       try {
         await this.sendWelcomeEmail({ userId: result.userId });
         console.log(`Welcome email sent to user: ${result.userId}`);
       } catch (error) {
-        console.error(`Failed to send welcome email to user ${result.userId}:`, error);
+        console.error(
+          `Failed to send welcome email to user ${result.userId}:`,
+          error,
+        );
         // Don't fail the verification process if welcome email fails
       }
     }
-    
+
     return result;
   }
 

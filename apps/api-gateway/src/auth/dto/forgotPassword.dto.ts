@@ -15,7 +15,8 @@ export class ForgotPasswordDto {
 
 export class ResetPasswordDto {
   @ApiProperty({
-    description: 'New password (8-100 characters, uppercase, lowercase, number, special character)',
+    description:
+      'New password (8-100 characters, uppercase, lowercase, number, special character)',
     example: 'MyNewSecure123!',
     minLength: 8,
     maxLength: 100,

@@ -33,7 +33,8 @@ export class ChangePasswordDto {
   @IsPasswordStrong()
   @Validate(PasswordsNotEqual)
   @ApiProperty({
-    description: 'New password (8-100 characters, uppercase, lowercase, number, special character)',
+    description:
+      'New password (8-100 characters, uppercase, lowercase, number, special character)',
     example: 'MyNewSecure456!',
   })
   newPassword: string;

@@ -3,6 +3,10 @@ import {
   DatabaseService,
   users,
   emailVerificationTokens,
+  // projects,
+  // tasks,
+  // timeEntries,
+  // notifications,
   type NewUser,
   type User,
   EmailVerificationToken,
@@ -402,6 +406,115 @@ export class UsersService {
       return {
         success: false,
         error: 'Failed to reset password',
+      };
+    }
+  }
+
+  async updatePassword(params: {
+    userId: string;
+    currentPassword: string;
+    newPassword: string;
+  }) {
+    const { userId, currentPassword, newPassword } = params;
+    const user = await this.findUserInternal({ id: userId });
+    if (!user) {
+      return { success: false, error: 'User not found' };
+    }
+
+    const isPasswordValid = await PasswordUtils.comparePassword(
+      currentPassword,
+      user.passwordHash,
+    );
+
+    if (!isPasswordValid) {
+      return { success: false, error: 'Current password is incorrect' };
+    }
+
+    const newPasswordHash = await PasswordUtils.hashPassword(newPassword);
+
+    try {
+      await this.databaseService.db
+        .update(users)
+        .set({ passwordHash: newPasswordHash, updatedAt: new Date() })
+        .where(eq(users.id, userId));
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error updating password:', error);
+      return { success: false, error: 'Failed to update password' };
+    }
+  }
+
+  async deleteAccount(params: { userId: string }): Promise<{ success: boolean; error?: string }> {
+    const { userId } = params;
+    
+    try {
+      // Use a transaction to ensure all deletions happen atomically
+      const result = await this.databaseService.db.transaction(async (tx) => {
+        // Step 1: Delete dependent records first (in order of dependencies)
+        
+        // Delete email verification tokens that reference the user
+        await tx
+          .delete(emailVerificationTokens)
+          .where(eq(emailVerificationTokens.userId, userId));
+
+        // Delete notifications sent to the user
+        // await tx
+        //   .delete(notifications)
+        //   .where(eq(notifications.userId, userId));
+
+        // // Delete time entries created by the user
+        // await tx
+        //   .delete(timeEntries)
+        //   .where(eq(timeEntries.userId, userId));
+
+        // // For tasks: 
+        // // - Delete tasks created by the user
+        // // - Set assignee_id to null for tasks assigned to the user (to preserve task data)
+        // await tx
+        //   .delete(tasks)
+        //   .where(eq(tasks.createdById, userId));
+        
+        // await tx
+        //   .update(tasks)
+        //   .set({ assigneeId: null, updatedAt: new Date() })
+        //   .where(eq(tasks.assigneeId, userId));
+
+        // // Delete projects owned by the user
+        // await tx
+        //   .delete(projects)
+        //   .where(eq(projects.ownerId, userId));
+
+        // Step 2: Delete the user record and check if it was actually deleted
+        const deletedUsers = await tx
+          .delete(users)
+          .where(eq(users.id, userId))
+          .returning({ id: users.id });
+
+        // Return whether the user was actually deleted
+        return { deletedCount: deletedUsers.length };
+      });
+
+      // Check if the user was actually deleted
+      if (result.deletedCount === 0) {
+        return { 
+          success: false, 
+          error: 'User not found or could not be deleted' 
+        };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      
+      // Surface the actual error message for better debugging
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Unknown error occurred during account deletion';
+      
+      return { 
+        success: false, 
+        error: `Failed to delete account: ${errorMessage}` 
       };
     }
   }

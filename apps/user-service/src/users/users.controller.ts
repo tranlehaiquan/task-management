@@ -207,4 +207,18 @@ export class UsersController {
   async resetPassword(params: { token: string; newPassword: string }) {
     return this.usersService.resetPassword(params);
   }
+
+  @MessagePattern('user.update-password')
+  async updatePassword(params: {
+    userId: string;
+    currentPassword: string;
+    newPassword: string;
+  }) {
+    return this.usersService.updatePassword(params);
+  }
+
+  @MessagePattern('user.delete-account')
+  async deleteAccount(params: { userId: string }) {
+    return this.usersService.deleteAccount(params);
+  }
 }

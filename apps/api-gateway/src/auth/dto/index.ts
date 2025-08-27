@@ -8,3 +8,4 @@ export {
   ErrorResponseDto,
   ConflictErrorResponseDto,
 } from './auth-response.dto';
+export { DeleteAccountResponse } from './delete-account-response.dto';

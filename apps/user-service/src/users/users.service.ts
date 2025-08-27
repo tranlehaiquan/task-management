@@ -35,8 +35,24 @@ export class UsersService {
   }
 
   async getUserById(id: string): Promise<Omit<User, 'passwordHash'> | null> {
-    const user = await this.findUserInternal({ id });
-    return user ? sanitizeUserData(user) : null;
+    // Instead of selecting all fields then sanitizing, select only needed fields
+    const [user] = await this.databaseService.db
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        avatarUrl: users.avatarUrl,
+        isActive: users.isActive,
+        isEmailVerified: users.isEmailVerified,
+        lastLoginAt: users.lastLoginAt,
+        createdAt: users.createdAt,
+        updatedAt: users.updatedAt,
+      })
+      .from(users)
+      .where(eq(users.id, id))
+      .limit(1);
+    
+    return user || null;
   }
 
   async getUserByEmail(
@@ -268,7 +284,12 @@ export class UsersService {
    */
   async validateEmailVerificationToken(
     token: string,
-  ): Promise<{ success: boolean; error?: string; userId?: string }> {
+  ): Promise<{ 
+    success: boolean; 
+    error?: string; 
+    userId?: string;
+    shouldSendWelcomeEmail?: boolean;
+  }> {
     // Find the token in the database
     const [emailVerificationToken] = await this.databaseService.db
       .select()
@@ -309,7 +330,11 @@ export class UsersService {
       .delete(emailVerificationTokens)
       .where(eq(emailVerificationTokens.token, token));
 
-    return { success: true, userId: emailVerificationToken.userId };
+    return { 
+      success: true, 
+      userId: emailVerificationToken.userId,
+      shouldSendWelcomeEmail: true,
+    };
   }
 
   /**

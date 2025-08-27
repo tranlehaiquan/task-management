@@ -29,6 +29,7 @@
     "@task-mgmt/database": "workspace:*",
     "@task-mgmt/mail": "workspace:*",
     "@task-mgmt/shared-config": "workspace:*",
+    "@task-mgmt/shared-utils": "workspace:*",
     "@types/bcrypt": "^6.0.0",
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",

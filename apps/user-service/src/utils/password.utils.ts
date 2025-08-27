@@ -1,6 +1,6 @@
 import * as bcrypt from 'bcrypt';
 
-const SALT_ROUNDS = 12;
+const SALT_ROUNDS = parseInt(process.env.BCRYPT_SALT_ROUNDS || '12', 10);
 
 export class PasswordUtils {
   static async hashPassword(plainPassword: string): Promise<string> {

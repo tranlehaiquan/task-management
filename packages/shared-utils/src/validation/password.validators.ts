@@ -75,9 +75,10 @@ export function IsStrongPassword(
 
           // Check special characters requirement
           if (config.requireSpecialChars) {
-            const specialCharsRegex = new RegExp(
-              `[${config.allowedSpecialChars.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}]`,
-            );
+            const allowed = config.allowedSpecialChars ?? '';
+            if (allowed.length === 0) return false; // misconfiguration guard
+            const escaped = allowed.replace(/[-\\^$*+?.()|[\]{}]/g, '\\$&'); // include '-' escape
+            const specialCharsRegex = new RegExp(`[${escaped}]`);
             if (!specialCharsRegex.test(password)) {
               return false;
             }

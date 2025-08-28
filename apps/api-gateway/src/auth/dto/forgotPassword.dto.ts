@@ -1,6 +1,7 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsPasswordStrong } from '@task-mgmt/shared-utils';
 
 export class ForgotPasswordDto {
   @ApiProperty({
@@ -14,14 +15,16 @@ export class ForgotPasswordDto {
 
 export class ResetPasswordDto {
   @ApiProperty({
-    description: 'User password (minimum 8 characters)',
-    example: 'password123',
+    description:
+      'New password (8-100 characters, uppercase, lowercase, number, special character)',
+    example: 'MyNewSecure123!',
     minLength: 8,
+    maxLength: 100,
   })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   @IsNotEmpty()
   @IsString()
-  @MinLength(8)
+  @IsPasswordStrong()
   newPassword: string;
 
   @ApiProperty({

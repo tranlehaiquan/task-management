@@ -167,6 +167,7 @@ Verify email using verification token.
   success: boolean;
   error?: string;
   userId?: string;
+  shouldSendWelcomeEmail?: boolean;
 }
 ```
 
@@ -212,6 +213,29 @@ Validate password reset token.
   error?: string;
 }
 ```
+
+##### `user.sendWelcomeEmail`
+Send welcome email to verified user.
+
+**Input:**
+```typescript
+{
+  userId: string;
+}
+```
+
+**Output:**
+```typescript
+{
+  success: boolean;
+  error?: string;
+}
+```
+
+**Email Content:**
+- Subject: "Welcome to Task Management! 🎉"
+- Contains feature overview and dashboard link
+- Sent after successful email verification
 
 ##### `user.reset-password`
 Reset user password using token.

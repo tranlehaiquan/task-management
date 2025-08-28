@@ -5,6 +5,7 @@ import type { NewUser, User } from '@task-mgmt/database';
 import { CreateNewUserDto } from './dto/createNewUser.dto';
 import type { FindUserCriteria } from './dto/findUser.dto';
 import { MailService } from '@task-mgmt/mail';
+import { EmailTemplates } from '../templates/email.templates';
 
 // Type for user data without passwordHash
 type SanitizedUser = Omit<User, 'passwordHash'>;
@@ -130,11 +131,18 @@ export class UsersController {
       await this.usersService.createVerificationToken(userId, user.email);
 
     try {
+      // Use the email template
+      const emailContent = EmailTemplates.verificationEmail(
+        this.getFrontEndUrl(),
+        emailVerificationTokenRecord.token,
+        user.name,
+      );
+
       await this.mailService.transporter.sendMail({
         to: user.email,
-        subject: 'Verify your email',
-        text: 'Please verify your email by clicking the link below',
-        html: `<p>Please verify your email by clicking the link below <a href="${this.getFrontEndUrl()}/verify-email/${emailVerificationTokenRecord.token}">${this.getFrontEndUrl()}/verify-email/${emailVerificationTokenRecord.token}</a></p>`,
+        subject: emailContent.subject,
+        text: emailContent.text,
+        html: emailContent.html,
       });
 
       return { success: true };
@@ -156,8 +164,26 @@ export class UsersController {
     success: boolean;
     error?: string;
     userId?: string;
+    shouldSendWelcomeEmail?: boolean;
   }> {
-    return this.usersService.validateEmailVerificationToken(token);
+    const result =
+      await this.usersService.validateEmailVerificationToken(token);
+
+    // Automatically send welcome email if email verification was successful
+    if (result.success && result.shouldSendWelcomeEmail && result.userId) {
+      try {
+        await this.sendWelcomeEmail({ userId: result.userId });
+        console.log(`Welcome email sent to user: ${result.userId}`);
+      } catch (error) {
+        console.error(
+          `Failed to send welcome email to user ${result.userId}:`,
+          error,
+        );
+        // Don't fail the verification process if welcome email fails
+      }
+    }
+
+    return result;
   }
 
   @MessagePattern('user.forgotPassword')
@@ -178,11 +204,18 @@ export class UsersController {
       );
 
     try {
+      // Use the email template
+      const emailContent = EmailTemplates.passwordResetEmail(
+        this.getFrontEndUrl(),
+        passwordResetTokenRecord.token,
+        user.name,
+      );
+
       await this.mailService.transporter.sendMail({
         to: user.email,
-        subject: 'Reset your password',
-        text: 'Please reset your password by clicking the link below',
-        html: `<p>Please reset your password by clicking the link below <a href="${this.getFrontEndUrl()}/reset-password/${passwordResetTokenRecord.token}">${this.getFrontEndUrl()}/reset-password/${passwordResetTokenRecord.token}</a></p>`,
+        subject: emailContent.subject,
+        text: emailContent.text,
+        html: emailContent.html,
       });
     } catch (error) {
       console.log(error);
@@ -220,5 +253,49 @@ export class UsersController {
   @MessagePattern('user.delete-account')
   async deleteAccount(params: { userId: string }) {
     return this.usersService.deleteAccount(params);
+  }
+
+  @MessagePattern('user.sendWelcomeEmail')
+  async sendWelcomeEmail({ userId }: { userId: string }): Promise<{
+    success: boolean;
+    error?: string;
+  }> {
+    const user = await this.usersService.getUserById(userId);
+    if (!user) {
+      return {
+        success: false,
+        error: 'User not found',
+      };
+    }
+
+    if (!user.isEmailVerified) {
+      return {
+        success: false,
+        error: 'User email not verified',
+      };
+    }
+
+    try {
+      // Use the welcome email template
+      const emailContent = EmailTemplates.welcomeEmail(
+        this.getFrontEndUrl(),
+        user.name,
+      );
+
+      await this.mailService.transporter.sendMail({
+        to: user.email,
+        subject: emailContent.subject,
+        text: emailContent.text,
+        html: emailContent.html,
+      });
+
+      return { success: true };
+    } catch (error) {
+      console.log(error);
+      return {
+        success: false,
+        error: `Failed to send welcome email`,
+      };
+    }
   }
 }

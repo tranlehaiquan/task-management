@@ -366,9 +366,10 @@ export class AuthController {
   }
 
   @Delete('account')
-  @ApiOperation({ 
-    summary: 'Delete user account', 
-    description: 'Permanently deletes the authenticated user account and all associated data' 
+  @ApiOperation({
+    summary: 'Delete user account',
+    description:
+      'Permanently deletes the authenticated user account and all associated data',
   })
   @ApiOkResponse({
     description: 'Account deleted successfully',
@@ -384,7 +385,9 @@ export class AuthController {
   })
   @ApiBearerAuth('JWT-auth')
   @UseGuards(AuthGuard)
-  async deleteAccount(@CurrentUser() user: CurrentUserType): Promise<DeleteAccountResponse> {
+  async deleteAccount(
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<DeleteAccountResponse> {
     const { id } = user;
 
     try {
@@ -417,7 +420,9 @@ export class AuthController {
 
       // For unexpected errors, log and throw internal server error
       this.logger.error('Unexpected error during account deletion:', error);
-      throw new InternalServerErrorException('Internal server error occurred during account deletion');
+      throw new InternalServerErrorException(
+        'Internal server error occurred during account deletion',
+      );
     }
   }
 }

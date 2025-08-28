@@ -1,10 +1,11 @@
-import { IsNotEmpty, IsString, MinLength, Validate } from 'class-validator';
+import { IsNotEmpty, IsString, Validate } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
   ValidationArguments,
 } from 'class-validator';
+import { IsPasswordStrong } from '@task-mgmt/shared-utils';
 
 @ValidatorConstraint({ name: 'passwordsNotEqual', async: false })
 export class PasswordsNotEqual implements ValidatorConstraintInterface {
@@ -21,20 +22,20 @@ export class PasswordsNotEqual implements ValidatorConstraintInterface {
 export class ChangePasswordDto {
   @IsNotEmpty()
   @IsString()
-  @MinLength(8)
   @ApiProperty({
     description: 'Current password of the user',
-    example: 'currentPassword123',
+    example: 'MyCurrentPass123!',
   })
   currentPassword: string;
 
   @IsNotEmpty()
   @IsString()
-  @MinLength(8)
+  @IsPasswordStrong()
   @Validate(PasswordsNotEqual)
   @ApiProperty({
-    description: 'New password of the user',
-    example: 'newPassword123',
+    description:
+      'New password (8-100 characters, uppercase, lowercase, number, special character)',
+    example: 'MyNewSecure456!',
   })
   newPassword: string;
 }

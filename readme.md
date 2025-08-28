@@ -23,6 +23,7 @@ A modern, scalable task management platform built with microservices architectur
 - 🔐 **User Management**: Complete user CRUD, authentication, email verification, password reset
 
 **Current Working Features**:
+
 - ✅ User registration and login with JWT tokens
 - ✅ Email verification system
 - ✅ Password reset flow with secure tokens
@@ -259,6 +260,7 @@ The API Gateway currently provides these working endpoints:
 - `GET /api/users/:id` - Get user by ID (protected, requires JWT)
 
 **Features:**
+
 - 🔒 JWT-based authentication with Bearer token support
 - 📧 Email verification system with secure tokens
 - 🔑 Password reset flow with time-limited tokens
@@ -418,56 +420,33 @@ Individual microservices communicate via TCP and don't expose HTTP endpoints dir
 
 ## 🛣️ Roadmap
 
-### Phase 1: Foundation & Core Infrastructure ✅ (COMPLETED)
+For detailed development roadmap and future plans, see **[ROADMAP.md](./ROADMAP.md)**.
 
-- [x] **Monorepo Setup**: pnpm + Turbo with workspace configuration
-- [x] **Database Infrastructure**: PostgreSQL with Drizzle ORM, implemented schema for users, email verification tokens
-- [x] **Shared Packages**: Database package with type-safe schema, shared-config with service ports, shared-types with auth types, mail service package
-- [x] **API Gateway**: HTTP REST API with comprehensive Swagger documentation, CORS, validation, JWT auth guards
-- [x] **Auth Service**: JWT token generation/validation microservice with TCP communication
-- [x] **User Service**: Complete user CRUD operations with password hashing, email verification, password reset, TCP microservice communication
-- [x] **Email Service**: SMTP integration with nodemailer for email verification and password reset
-- [x] **Service Communication**: TCP-based microservice architecture with message patterns
-- [x] **Authentication Flow**: Complete user registration, login, email verification, password reset workflows
-- [x] **Type Safety**: Full TypeScript support across all services with shared types
-- [x] **Development Tools**: ESLint, Prettier, Jest testing scaffolding, e2e test setup
+### Current Status: Phase 2 - Core Business Features 🚧
 
-### Phase 2: Core Business Features (CURRENT)
+**Recently Completed (Phase 1)**:
 
-- [ ] **Project Service**: Project CRUD operations, ownership management, project-user relationships
-- [ ] **Task Service**: Task lifecycle management, assignments, status tracking, priority system
-- [ ] **API Gateway Integration**: Complete proxy layer for all services with authentication guards
-- [ ] **Docker Compose**: Development environment with PostgreSQL, Redis, all services
-- [ ] **Database Migrations**: Production-ready migration system and seeding
-- [ ] **Email Service**: Email notifications and SMTP server integration
-- [ ] **Environment Configuration**: Complete .env setup and documentation
+- ✅ Complete microservices architecture with TCP communication
+- ✅ JWT authentication system with email verification
+- ✅ User management with password reset functionality
+- ✅ API Gateway with comprehensive Swagger documentation
+- ✅ Database schema design for all core entities
+- ✅ Shared utilities for password hashing and email templates
 
-### Phase 3: Enhanced Features & UI
+**Currently Working On (Phase 2)**:
 
-- [ ] **React Frontend**: Modern web client with TypeScript, Vite, Tailwind CSS
-- [ ] **Time Tracking Service**: Work logging, timer functionality, reports
-- [ ] **Notification Service**: Real-time notifications with WebSocket/SSE, email alerts
-- [ ] **Advanced Task Features**: Task dependencies, subtasks, task templates
-- [ ] **File Attachments**: File upload/download system for tasks and projects
-- [ ] **Team Collaboration**: Team memberships, role-based permissions, activity feeds
+- 🚧 Project Service implementation
+- 🚧 Task Service with full lifecycle management
+- 🚧 Docker Compose development environment
+- 🚧 Enhanced API Gateway integration
 
-### Phase 4: Advanced Features & Optimization
+**Next Up (Phase 3)**:
 
-- [ ] **Analytics & Reporting**: Dashboards, time reports, productivity metrics
-- [ ] **Search & Filtering**: Advanced search across projects/tasks, filtering, sorting
-- [ ] **Workflow Automation**: Task automation rules, notifications, status transitions
-- [ ] **API Rate Limiting**: Redis-based rate limiting and caching
-- [ ] **Monitoring & Observability**: Prometheus, Grafana, structured logging
-- [ ] **Performance Optimization**: Query optimization, caching strategies, load testing
+- 📋 React frontend application
+- 📋 Time tracking service
+- 📋 Real-time notifications
 
-### Phase 5: Platform & Integrations
-
-- [ ] **Mobile App**: React Native application for iOS/Android
-- [ ] **Third-party Integrations**: Slack, GitHub, calendar integrations
-- [ ] **Advanced Security**: RBAC refinement, audit logging, security headers
-- [ ] **Deployment & DevOps**: CI/CD pipelines, container orchestration, staging environments
-- [ ] **API Versioning**: Backward compatibility, API versioning strategy
-- [ ] **Scalability**: Horizontal scaling, microservice resilience patterns
+See the [full roadmap](./ROADMAP.md) for detailed feature breakdown and timelines.
 
 ## 🤝 Contributing
 

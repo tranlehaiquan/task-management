@@ -4,7 +4,7 @@ import { UsersService } from './users.service';
 import type { NewUser, User } from '@task-mgmt/database';
 import { CreateNewUserDto } from './dto/createNewUser.dto';
 import type { FindUserCriteria } from './dto/findUser.dto';
-import { MailService } from '@task-mgmt/mail';
+import { QueueService } from '@task-mgmt/queue';
 import { EmailTemplates } from '../templates/email.templates';
 
 // Type for user data without passwordHash
@@ -14,7 +14,7 @@ type SanitizedUser = Omit<User, 'passwordHash'>;
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
-    private readonly mailService: MailService,
+    private readonly queueService: QueueService,
   ) {}
 
   getFrontEndUrl(): string {
@@ -138,12 +138,22 @@ export class UsersController {
         user.name,
       );
 
-      await this.mailService.transporter.sendMail({
+      // Queue the email instead of sending directly
+      const result = await this.queueService.addEmailJob({
         to: user.email,
         subject: emailContent.subject,
         text: emailContent.text,
         html: emailContent.html,
+        jobType: 'verification',
+        userId: userId,
       });
+
+      if (!result.success) {
+        return {
+          success: false,
+          error: `Failed to queue verification email: ${result.error}`,
+        };
+      }
 
       return { success: true };
     } catch (error) {
@@ -211,17 +221,27 @@ export class UsersController {
         user.name,
       );
 
-      await this.mailService.transporter.sendMail({
+      // Queue the password reset email instead of sending directly
+      const result = await this.queueService.addEmailJob({
         to: user.email,
         subject: emailContent.subject,
         text: emailContent.text,
         html: emailContent.html,
+        jobType: 'password-reset',
+        userId: user.id,
       });
+
+      if (!result.success) {
+        return {
+          success: false,
+          error: `Failed to queue password reset email: ${result.error}`,
+        };
+      }
     } catch (error) {
       console.log(error);
       return {
         success: false,
-        error: `Failed to send password reset email`,
+        error: `Failed to queue password reset email`,
       };
     }
 
@@ -282,12 +302,22 @@ export class UsersController {
         user.name,
       );
 
-      await this.mailService.transporter.sendMail({
+      // Queue the welcome email instead of sending directly
+      const result = await this.queueService.addEmailJob({
         to: user.email,
         subject: emailContent.subject,
         text: emailContent.text,
         html: emailContent.html,
+        jobType: 'welcome',
+        userId: user.id,
       });
+
+      if (!result.success) {
+        return {
+          success: false,
+          error: `Failed to queue welcome email: ${result.error}`,
+        };
+      }
 
       return { success: true };
     } catch (error) {

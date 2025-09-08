@@ -27,5 +27,6 @@
       "cache": false
     }
   },
-  "ui": "tui"
+  "ui": "tui",
+  "concurrency": "11"
 }

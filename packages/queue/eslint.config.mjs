@@ -1,3 +1,4 @@
-import baseConfig from "@task-mgmt/eslint-config";
+// @ts-check
+import { createAppEslintConfig } from '@task-mgmt/eslint-config';
 
-export default [...baseConfig];
+export default createAppEslintConfig({ tsconfigRootDir: import.meta.dirname });

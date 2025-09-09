@@ -12,7 +12,7 @@ export class EmailConsumer extends WorkerHost {
   }
 
   async process(job: Job<any, any, string>): Promise<any> {
-    const emailData: EmailJob = job.data;
+    const emailData = job.data as EmailJob;
 
     try {
       this.logger.log(

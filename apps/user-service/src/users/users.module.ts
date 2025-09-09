@@ -24,7 +24,7 @@ import { QueueModule } from '@task-mgmt/queue';
       redis: {
         host: process.env.REDIS_HOST,
         port: parseInt(process.env.REDIS_PORT || '6379', 10),
-      }
+      },
     }),
   ],
   controllers: [UsersController],

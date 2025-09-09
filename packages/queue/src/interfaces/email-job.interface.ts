@@ -16,8 +16,8 @@ export interface QueueJobOptions {
   priority?: number;
   delay?: number;
   attempts?: number;
-  removeOnComplete?: number;
-  removeOnFail?: number;
+  removeOnComplete?: boolean | number;
+  removeOnFail?: boolean | number;
 }
 
 export interface EmailJobResult {

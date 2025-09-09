@@ -1,4 +1,4 @@
-version: "3"
+version: '3'
 
 services:
   mailpit:
@@ -15,6 +15,41 @@ services:
       MP_DATABASE: /data/mailpit.db
       MP_SMTP_AUTH_ACCEPT_ANY: 1
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+  redis:
+    image: redis:7-alpine
+    container_name: task-manager-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    environment:
+      - REDIS_PASSWORD=
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  email-worker:
+    build:
+      context: .
+      dockerfile: apps/email-worker/Dockerfile
+    container_name: task-mgmt-email-worker
+    restart: unless-stopped
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - MAIL_HOST=mailpit
+      - MAIL_PORT=1025
+      - MAIL_USER=
+      - MAIL_PASS=
+      - NODE_ENV=development
+    depends_on:
+      - redis
+      - mailpit
 
   # payload:
   #   build: .
@@ -35,9 +70,9 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - '5432:5432'
 
 volumes:
   data:
   pgdata:
-  node_modules:
+  redis_data:

@@ -27,7 +27,7 @@
     "@nestjs/microservices": "^11.1.6",
     "@nestjs/platform-express": "^11.1.6",
     "@task-mgmt/database": "workspace:*",
-    "@task-mgmt/mail": "workspace:*",
+    "@task-mgmt/queue": "workspace:*",
     "@task-mgmt/shared-config": "workspace:*",
     "@task-mgmt/shared-utils": "workspace:*",
     "@types/bcrypt": "^6.0.0",
@@ -63,7 +63,7 @@
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.2",
-    "typescript-eslint": "^8.42.0"
+    "typescript-eslint": "^8.43.0"
   },
   "jest": {
     "moduleFileExtensions": [

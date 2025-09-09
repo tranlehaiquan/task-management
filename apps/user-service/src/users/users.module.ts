@@ -3,19 +3,13 @@ import { DatabaseModule } from '@task-mgmt/database';
 import { UsersController } from './users.controller';
 import { ConfigModule } from '@nestjs/config';
 import { UsersService } from './users.service';
-import { MailModule } from '@task-mgmt/mail';
+import { QueueModule } from '@task-mgmt/queue';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
-    }),
-    MailModule.forRoot({
-      host: process.env.MAIL_HOST!,
-      port: Number(process.env.MAIL_PORT!),
-      user: process.env.MAIL_USER!,
-      pass: process.env.MAIL_PASS!,
     }),
     DatabaseModule.register({
       host: process.env.DB_HOST,
@@ -25,6 +19,12 @@ import { MailModule } from '@task-mgmt/mail';
       database: process.env.DB_NAME,
       ssl:
         process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+    }),
+    QueueModule.forRoot({
+      redis: {
+        host: process.env.REDIS_HOST,
+        port: parseInt(process.env.REDIS_PORT || '6379', 10),
+      },
     }),
   ],
   controllers: [UsersController],

@@ -4,7 +4,7 @@ export interface EmailJob {
   text: string;
   html: string;
   template?: string;
-  templateData?: Record<string, any>;
+  templateData?: Record<string, unknown>;
   priority?: number;
   delay?: number;
   attempts?: number;

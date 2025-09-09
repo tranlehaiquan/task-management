@@ -1,7 +1,7 @@
-import { OnQueueEvent, Processor, WorkerHost } from '@nestjs/bullmq';
+import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
+import type { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
 import { MailService } from '@task-mgmt/mail';
-import { Job } from 'bullmq';
 import type { EmailJob } from '@task-mgmt/queue';
 
 @Processor('email')

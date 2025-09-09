@@ -39,7 +39,7 @@ export class EmailConsumer extends WorkerHost {
   }
 
   @OnWorkerEvent('completed')
-  onCompleted(job: Job, result: unknown): void {
+  onCompleted(job: Job): void {
     this.logger.log(`Job ${job.id} completed successfully`);
   }
 

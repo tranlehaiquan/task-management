@@ -38,18 +38,18 @@ export class EmailConsumer extends WorkerHost {
     }
   }
 
-  @OnQueueEvent('completed')
-  onCompleted(event: string, job: Job) {
+  @OnWorkerEvent('completed')
+  onCompleted(job: Job, result: unknown): void {
     this.logger.log(`Job ${job.id} completed successfully`);
   }
 
-  @OnQueueEvent('failed')
-  onFailed(event: string, job: Job, err: Error) {
-    this.logger.error(`Job ${job?.id} failed:`, err);
+  @OnWorkerEvent('failed')
+  onFailed(job: Job, err: Error): void {
+    this.logger.error(`Job ${job?.id} failed`, err?.stack);
   }
 
-  @OnQueueEvent('error')
-  onError(event: string, err: Error) {
-    this.logger.error('Worker error:', err);
+  @OnWorkerEvent('error')
+  onError(err: Error): void {
+    this.logger.error('Worker error', err?.stack);
   }
 }

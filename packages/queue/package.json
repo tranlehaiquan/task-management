@@ -4,6 +4,15 @@
   "description": "BullMQ queue service for task management",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/**/*"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",

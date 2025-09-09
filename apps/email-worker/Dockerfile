@@ -1,30 +1,32 @@
-FROM node:22-alpine
+# apps/email-worker/Dockerfile
 
+# Builder stage: install deps and build
+FROM node:22-alpine AS builder
 WORKDIR /app
+RUN corepack enable
 
-# Enable Corepack-managed package managers
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
-# Copy package files
+# Workspace manifests first for better caching
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/email-worker/package.json ./apps/email-worker/
-COPY packages/queue/package.json ./packages/queue/
-COPY packages/mail/package.json ./packages/mail/
+COPY apps/email-worker/package.json apps/email-worker/
+COPY packages/queue/package.json packages/queue/
+COPY packages/mail/package.json packages/mail/
 
-# Install dependencies (frozen)
+# Install all deps
 RUN pnpm install --frozen-lockfile
 
-# Copy source code
+# Copy source and build in dependency order
 COPY . .
+RUN pnpm -r --filter ./packages/queue --filter ./packages/mail build \
+  && pnpm --filter ./apps/email-worker build
 
-# Build the queue and mail packages first
-RUN cd packages/queue && pnpm build
-RUN cd packages/mail && pnpm build
+# Create a minimal production bundle
+RUN pnpm --filter ./apps/email-worker deploy --prod /opt/run
 
-# Build the email worker
-RUN cd apps/email-worker && pnpm build
+# Runner stage: only production runtime
+FROM node:22-alpine AS runner
+WORKDIR /opt/run
+ENV NODE_ENV=production
+USER node
 
 # No ports exposed; worker runs headless
-
-# Start the email worker
-CMD ["node", "apps/email-worker/dist/main.js"]
+CMD ["node", "dist/main.js"]

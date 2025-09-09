@@ -12,10 +12,10 @@ import { EmailConsumer } from './email.processer';
       },
     }),
     MailModule.forRoot({
-      host: process.env.MAIL_HOST || 'smtp.ethereal.email',
-      port: parseInt(process.env.MAIL_PORT || '587'),
-      user: process.env.MAIL_USER || 'dustin.bechtelar21@ethereal.email',
-      pass: process.env.MAIL_PASS || 'aX8cue9qqNDsBNxyyv',
+      host: process.env.MAIL_HOST ?? 'mailpit',
+      port: parseInt(process.env.MAIL_PORT ?? '1025', 10),
+      user: process.env.MAIL_USER ?? '',
+      pass: process.env.MAIL_PASS ?? '',
     }),
     BullModule.registerQueue({
       name: 'email',

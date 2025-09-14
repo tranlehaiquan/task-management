@@ -15,6 +15,13 @@
       "when": 1755069689337,
       "tag": "0001_first_master_mold",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1757841298325,
+      "tag": "0002_eminent_romulus",
+      "breakpoints": true
     }
   ]
 }

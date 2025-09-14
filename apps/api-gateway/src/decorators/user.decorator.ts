@@ -13,7 +13,3 @@ export const CurrentUser = createParamDecorator(
     return request.user;
   },
 );
-
-// // set metadata authenticate is optional
-// export const IS_AUTH_OPTIONAL = 'IS_AUTH_OPTIONAL';
-// export const AuthIsOptional = () => SetMetadata(IS_AUTH_OPTIONAL, true);

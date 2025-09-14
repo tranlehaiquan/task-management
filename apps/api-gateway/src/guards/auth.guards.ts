@@ -9,6 +9,8 @@ import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import type { Request } from 'express';
 import type { CurrentUser, UserJWTPayload } from '@task-mgmt/shared-types';
+import { Reflector } from '@nestjs/core';
+import { Roles } from '../decorators/roles.decorator';
 
 interface AuthenticatedRequest extends Request {
   user?: CurrentUser;
@@ -19,9 +21,11 @@ export class AuthGuard implements CanActivate {
   constructor(
     @Inject('TOKEN_SERVICE') private readonly tokenService: ClientProxy,
     @Inject('USER_SERVICE') private readonly userService: ClientProxy,
+    private reflector: Reflector,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const roles = this.reflector.get(Roles, context.getHandler());
     const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
     if (!request?.headers?.authorization) {
       return false;
@@ -55,6 +59,10 @@ export class AuthGuard implements CanActivate {
 
       // TODO: add !userData.isActive condition latter
       if (!userData) {
+        return false;
+      }
+
+      if (roles && !roles.includes(userData.role)) {
         return false;
       }
 

@@ -15,6 +15,11 @@ export type UserJWTPayload = {
 };
 
 /**
+ * User role types for system-level permissions
+ */
+export type UserRole = 'user' | 'admin' | 'super_admin';
+
+/**
  * Current authenticated user information with complete profile data
  * Used in request.user for authenticated routes (excludes sensitive data)
  *
@@ -28,6 +33,8 @@ export type CurrentUser = {
   email: string;
   /** User display name */
   name: string;
+  /** User system role for permissions */
+  role: UserRole;
   /** User avatar URL (nullable) */
   avatarUrl: string | null;
   /** Whether the user account is active */

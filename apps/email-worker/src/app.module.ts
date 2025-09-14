@@ -2,9 +2,14 @@ import { Module } from '@nestjs/common';
 import { MailModule } from '@task-mgmt/mail';
 import { BullModule } from '@nestjs/bullmq';
 import { EmailConsumer } from './email.processer';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
+    }),
     BullModule.forRoot({
       connection: {
         host: process.env.REDIS_HOST || 'localhost',

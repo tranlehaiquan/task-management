@@ -27,13 +27,13 @@ description: Shared types and authentication patterns across microservices
 **Location**: [apps/api-gateway/src/guards/auth.guards.ts](mdc:apps/api-gateway/src/guards/auth.guards.ts)
 
 **Two-step flow**:
-1. **JWT Validation**: Call `AUTH_SERVICE.auth.validateToken` → returns `UserJWTPayload | null` (minimal: id, iat, exp)
+1. **JWT Validation**: Call `TOKEN_SERVICE.auth.validateToken` → returns `UserJWTPayload | null` (minimal: id, iat, exp)
 2. **User Data Fetch**: Call `USER_SERVICE.user.findById(payload.id)` → returns `CurrentUser | null` (full profile)
 
 **Constructor Dependencies**:
 ```typescript
 constructor(
-  @Inject('AUTH_SERVICE') private readonly authService: ClientProxy,
+  @Inject('TOKEN_SERVICE') private readonly tokenService: ClientProxy,
   @Inject('USER_SERVICE') private readonly userService: ClientProxy,
 ) {}
 ```
@@ -55,7 +55,7 @@ async endpoint(@CurrentUser() user: CurrentUserType) {
 ## Guidelines
 
 - **Import Pattern**: Always use `import type { ... } from '@task-mgmt/shared-types'` for type-only imports
-- **Auth Guard**: Must inject both AUTH_SERVICE and USER_SERVICE for proper separation of concerns
+- **Auth Guard**: Must inject both TOKEN_SERVICE and USER_SERVICE for proper separation of concerns
 - **Type Usage**: 
   - Use `UserJWTPayload` for JWT token validation (minimal payload)
   - Use `CurrentUser` for request.user and @CurrentUser() decorator (full profile)
@@ -66,6 +66,6 @@ async endpoint(@CurrentUser() user: CurrentUserType) {
   - JWT claims (iat, exp) remain as epoch seconds
 - **No Duplication**: Never define JWT/user types locally; always import from shared-types
 - **Service Boundaries**: 
-  - AUTH_SERVICE: Only handles JWT validation/generation
+  - TOKEN_SERVICE: Only handles JWT validation/generation
   - USER_SERVICE: Only handles user data CRUD
   - API_GATEWAY: Orchestrates the auth flow

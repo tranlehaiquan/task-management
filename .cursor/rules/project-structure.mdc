@@ -11,19 +11,22 @@ This repository is a pnpm + Turborepo monorepo with multiple NestJS apps and sha
 - Apps live in `apps/*` and each follows NestJS conventions with `src/main.ts` bootstrapping `AppModule`.
 
   - API Gateway: [apps/api-gateway/src/main.ts](mdc:apps/api-gateway/src/main.ts), [apps/api-gateway/src/app.module.ts](mdc:apps/api-gateway/src/app.module.ts)
-  - Auth Service: [apps/auth-service/src/main.ts](mdc:apps/auth-service/src/main.ts), [apps/auth-service/src/app.module.ts](mdc:apps/auth-service/src/app.module.ts)
+  - Email Worker: [apps/email-worker/src/main.ts](mdc:apps/email-worker/src/main.ts), [apps/email-worker/src/app.module.ts](mdc:apps/email-worker/src/app.module.ts)
   - Notification Service: [apps/notification-service/src/main.ts](mdc:apps/notification-service/src/main.ts), [apps/notification-service/src/app.module.ts](mdc:apps/notification-service/src/app.module.ts)
   - Project Service: [apps/project-service/src/main.ts](mdc:apps/project-service/src/main.ts), [apps/project-service/src/app.module.ts](mdc:apps/project-service/src/app.module.ts)
   - Task Service: [apps/task-service/src/main.ts](mdc:apps/task-service/src/main.ts), [apps/task-service/src/app.module.ts](mdc:apps/task-service/src/app.module.ts)
   - Time Tracking Service: [apps/time-tracking-service/src/main.ts](mdc:apps/time-tracking-service/src/main.ts), [apps/time-tracking-service/src/app.module.ts](mdc:apps/time-tracking-service/src/app.module.ts)
+  - Token Service: [apps/token-service/src/main.ts](mdc:apps/token-service/src/main.ts), [apps/token-service/src/app.module.ts](mdc:apps/token-service/src/app.module.ts)
   - User Service: [apps/user-service/src/main.ts](mdc:apps/user-service/src/main.ts), [apps/user-service/src/app.module.ts](mdc:apps/user-service/src/app.module.ts)
 
 - Shared packages live in `packages/*`:
 
   - Database (Drizzle + Postgres): [packages/database/src/index.ts](mdc:packages/database/src/index.ts), [packages/database/src/database.module.ts](mdc:packages/database/src/database.module.ts), [packages/database/src/database.service.ts](mdc:packages/database/src/database.service.ts), [packages/database/src/schema/index.ts](mdc:packages/database/src/schema/index.ts), [packages/database/drizzle.config.ts](mdc:packages/database/drizzle.config.ts)
+  - Mail (Nodemailer integration): [packages/mail/src/index.ts](mdc:packages/mail/src/index.ts), [packages/mail/src/mail.module.ts](mdc:packages/mail/src/mail.module.ts)
+  - Queue (BullMQ integration): [packages/queue/src/index.ts](mdc:packages/queue/src/index.ts), [packages/queue/src/queue.module.ts](mdc:packages/queue/src/queue.module.ts)
   - Shared config: [packages/shared-config/src/index.ts](mdc:packages/shared-config/src/index.ts)
   - Shared types: [packages/shared-types/src/index.ts](mdc:packages/shared-types/src/index.ts), [packages/shared-types/src/auth.types.ts](mdc:packages/shared-types/src/auth.types.ts)
-  - Shared utils/package: [packages/shared-utils/README.md](mdc:packages/shared-utils/README.md), [packages/shared-package/README.md](mdc:packages/shared-package/README.md)
+  - Shared utils: [packages/shared-utils/src/index.ts](mdc:packages/shared-utils/src/index.ts)
 
 - Typical NestJS layout per app: `app.module.ts`, controllers under feature folders (e.g., `users/users.controller.ts`), DTOs under `dto/`, services under `*.service.ts`, optional `guards/` and `middleware/`.
 

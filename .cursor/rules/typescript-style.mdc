@@ -29,5 +29,15 @@ description: TypeScript style guide for this repository
     - Database: `from '@task-mgmt/database'` ([packages/database/src/index.ts](mdc:packages/database/src/index.ts))
     - Types: `from '@task-mgmt/shared-types'` ([packages/shared-types/src/index.ts](mdc:packages/shared-types/src/index.ts))
     - Config: `from '@task-mgmt/shared-config'` ([packages/shared-config/src/index.ts](mdc:packages/shared-config/src/index.ts))
+    - Mail: `from '@task-mgmt/mail'` ([packages/mail/src/index.ts](mdc:packages/mail/src/index.ts))
+    - Queue: `from '@task-mgmt/queue'` ([packages/queue/src/index.ts](mdc:packages/queue/src/index.ts))
+    - Shared Utils: `from '@task-mgmt/shared-utils'` ([packages/shared-utils/src/index.ts](mdc:packages/shared-utils/src/index.ts))
   - **Never duplicate types**: Always import `UserJWTPayload`, `CurrentUser` from shared-types package
   - Prefer workspace package imports over relative paths for shared code
+- **DTOs & Transformations**
+  - Type `@Transform` decorators properly to avoid `any` returns:
+    ```typescript
+    @Transform(({ value }): string => (typeof value === 'string' ? value.trim() : value))
+    ```
+  - Use explicit return types for class-transformer decorators
+  - Keep validation logic close to DTO definitions

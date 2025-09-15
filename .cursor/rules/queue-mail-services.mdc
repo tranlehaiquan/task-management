@@ -1,0 +1,69 @@
+---
+globs: apps/**/src/**/*.ts,packages/queue/**,packages/mail/**
+description: Queue and Mail service usage patterns with BullMQ and Nodemailer
+---
+
+# Queue & Mail Services
+
+## Queue Package (BullMQ)
+
+- **Location**: [packages/queue/src/index.ts](mdc:packages/queue/src/index.ts)
+- **Module**: [packages/queue/src/queue.module.ts](mdc:packages/queue/src/queue.module.ts)
+- **Service**: [packages/queue/src/queue.service.ts](mdc:packages/queue/src/queue.service.ts)
+- **Interfaces**: [packages/queue/src/interfaces/email-job.interface.ts](mdc:packages/queue/src/interfaces/email-job.interface.ts)
+
+### Usage Pattern:
+```typescript
+import { QueueModule, EmailJob } from '@task-mgmt/queue';
+
+// In your module
+@Module({
+  imports: [QueueModule],
+  // ...
+})
+```
+
+### Job Types:
+- **EmailJob**: For queuing email sending tasks
+- Use shared interfaces from `@task-mgmt/queue` for job data consistency
+
+## Mail Package (Nodemailer)
+
+- **Location**: [packages/mail/src/index.ts](mdc:packages/mail/src/index.ts)
+- **Module**: [packages/mail/src/mail.module.ts](mdc:packages/mail/src/mail.module.ts)
+- **Service**: [packages/mail/src/mail.service.ts](mdc:packages/mail/src/mail.service.ts)
+
+### Usage Pattern:
+```typescript
+import { MailModule, MailService } from '@task-mgmt/mail';
+
+// In your module
+@Module({
+  imports: [
+    MailModule.forRoot({
+      host: process.env.MAIL_HOST,
+      port: parseInt(process.env.MAIL_PORT),
+      user: process.env.MAIL_USER,
+      pass: process.env.MAIL_PASS,
+    }),
+  ],
+})
+```
+
+## Email Worker Architecture
+
+- **Worker App**: [apps/email-worker/src/main.ts](mdc:apps/email-worker/src/main.ts)
+- **Processor**: [apps/email-worker/src/email.processer.ts](mdc:apps/email-worker/src/email.processer.ts)
+
+### Flow:
+1. Services queue emails using QueueService → EmailJob
+2. Email Worker processes jobs using MailService
+3. BullMQ handles retry logic and monitoring
+
+## Guidelines
+
+- **Email Sending**: Always use `@task-mgmt/mail` package, never direct nodemailer implementation
+- **Queue Jobs**: Use shared interfaces from `@task-mgmt/queue` for consistency
+- **Configuration**: Mail/Queue configuration should be environment-based
+- **Error Handling**: Let BullMQ handle retries; log errors in processors
+- **Job Data**: Keep job payloads serializable; avoid complex objects

@@ -24,7 +24,7 @@ Guidelines:
 ### Microservice Communication
 
 - Use `@Inject('SERVICE_NAME')` with `ClientProxy` for inter-service communication
-- **Auth Guard Pattern**: Must inject both AUTH_SERVICE and USER_SERVICE for proper auth flow
+- **Auth Guard Pattern**: Must inject both TOKEN_SERVICE and USER_SERVICE for proper auth flow
 - Follow two-step authentication: JWT validation → user data fetch
 - Use shared types from `@task-mgmt/shared-types` for consistent contracts
 

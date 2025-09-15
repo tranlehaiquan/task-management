@@ -13,3 +13,5 @@ Conventions:
 - Install dependencies at the root; prefer filtered commands per app/package.
 - Build and test tasks should run via Turborepo pipelines.
 - Keep package boundaries clean; share code via `packages/*` with clear entry points.
+
+Current packages in scope: `@task-mgmt/api-gateway`, `@task-mgmt/database`, `@task-mgmt/email-worker`, `@task-mgmt/eslint-config`, `@task-mgmt/mail`, `@task-mgmt/notification-service`, `@task-mgmt/project-service`, `@task-mgmt/queue`, `@task-mgmt/shared-config`, `@task-mgmt/shared-types`, `@task-mgmt/shared-utils`, `@task-mgmt/task-service`, `@task-mgmt/time-tracking-service`, `@task-mgmt/token-service`, `@task-mgmt/user-service`.

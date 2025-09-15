@@ -21,7 +21,9 @@ export class ResetPasswordDto {
     minLength: 8,
     maxLength: 100,
   })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }): string =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   @IsNotEmpty()
   @IsString()
   @IsPasswordStrong()
@@ -31,7 +33,9 @@ export class ResetPasswordDto {
     description: 'Password reset token',
     example: 'resetToken123',
   })
-  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @Transform(({ value }): string =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   @IsNotEmpty()
   @IsString()
   token: string;

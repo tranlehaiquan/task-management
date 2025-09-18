@@ -357,6 +357,9 @@ importers:
       '@nestjs/common':
         specifier: ^11.1.6
         version: 11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/config':
+        specifier: ^4.0.2
+        version: 4.0.2(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
       '@nestjs/core':
         specifier: ^11.1.6
         version: 11.1.6(@nestjs/common@11.1.6(class-transformer@0.5.1)(class-validator@0.14.2)(reflect-metadata@0.2.2)(rxjs@7.8.2))(@nestjs/microservices@11.1.6)(@nestjs/platform-express@11.1.6)(reflect-metadata@0.2.2)(rxjs@7.8.2)
@@ -369,6 +372,15 @@ importers:
       '@task-mgmt/database':
         specifier: workspace:*
         version: link:../../packages/database
+      '@task-mgmt/shared-config':
+        specifier: workspace:*
+        version: link:../../packages/shared-config
+      '@task-mgmt/shared-types':
+        specifier: workspace:*
+        version: link:../../packages/shared-types
+      '@task-mgmt/shared-utils':
+        specifier: workspace:*
+        version: link:../../packages/shared-utils
       drizzle-orm:
         specifier: ^0.44.5
         version: 0.44.5(@types/pg@8.15.5)(gel@2.1.1)(pg@8.16.3)(postgres@3.4.7)

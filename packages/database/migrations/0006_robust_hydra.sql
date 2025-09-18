@@ -1,0 +1,1 @@
+CREATE TYPE "public"."project_role" AS ENUM('owner', 'admin', 'member', 'viewer');

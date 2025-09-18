@@ -7,6 +7,8 @@ import { ConfigModule } from '@nestjs/config';
 import { PORTS } from '@task-mgmt/shared-config';
 import { AuthModule } from './auth/auth.module';
 import { LoggerMiddleware } from './middleware/logger.middleware';
+import { ProjectsModule } from './projects/projects.module';
+import { TasksModule } from './tasks/tasks.module';
 
 @Global()
 @Module({
@@ -37,6 +39,8 @@ import { LoggerMiddleware } from './middleware/logger.middleware';
     }),
     UsersModule,
     AuthModule,
+    ProjectsModule,
+    TasksModule,
   ],
   controllers: [AppController],
   providers: [AppService],

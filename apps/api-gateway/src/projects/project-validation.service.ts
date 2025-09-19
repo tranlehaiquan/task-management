@@ -19,9 +19,9 @@ export class ProjectValidationService {
     userId: string,
   ): Promise<Project> {
     try {
-      const project = (await firstValueFrom(
+      const project = await firstValueFrom<Project>(
         this.projectService.send('project.get', projectId),
-      )) as Project;
+      );
 
       if (!project) {
         throw new NotFoundException('Project not found');

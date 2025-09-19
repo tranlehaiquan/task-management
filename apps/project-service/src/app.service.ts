@@ -77,10 +77,14 @@ export class AppService {
   }
 
   async deleteProject(id: string) {
-    await this.databaseService.db
+    const [deleted] = await this.databaseService.db
       .delete(projects)
       .where(eq(projects.id, id))
+      .returning({ id: projects.id })
       .execute();
+    if (!deleted) {
+      throw new NotFoundException(`Project ${id} not found`);
+    }
     return {
       success: true,
       message: `Project with ID ${id} deleted.`,

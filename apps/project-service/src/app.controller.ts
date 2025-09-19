@@ -1,7 +1,10 @@
 import { Controller } from '@nestjs/common';
-import { MessagePattern } from '@nestjs/microservices';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AppService } from './app.service';
-import { type NewProject, type UpdateProject } from '@task-mgmt/database';
+import { type NewProject } from '@task-mgmt/database';
+import { TransferProjectDto } from './dto/transfer-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
+import { GetAllProjectsDto } from './dto/get-all-projects.dto';
 
 @Controller()
 export class AppController {
@@ -22,10 +25,12 @@ export class AppController {
         success: true,
         data: result,
       };
-    } catch {
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to create project';
       return {
         success: false,
-        message: 'Failed to create project',
+        message,
       };
     }
   }
@@ -36,8 +41,8 @@ export class AppController {
   }
 
   @MessagePattern('project.getAll')
-  getAllProjects(page?: number, limit?: number) {
-    return this.appService.getAll(page, limit);
+  getAllProjects(payload: GetAllProjectsDto) {
+    return this.appService.getAll(payload.page, payload.limit);
   }
 
   @MessagePattern('project.get')
@@ -51,12 +56,12 @@ export class AppController {
   }
 
   @MessagePattern('project.update')
-  updateProject(data: UpdateProject) {
+  updateProject(data: UpdateProjectDto) {
     return this.appService.updateProject(data);
   }
 
   @MessagePattern('project.transfer')
-  transferProject(projectId: string, toUserId: string) {
-    return this.appService.transferProject(projectId, toUserId);
+  transferProject(@Payload() data: TransferProjectDto) {
+    return this.appService.transferProject(data.id, data.toUserId);
   }
 }

@@ -10,6 +10,7 @@ import {
   Inject,
   BadRequestException,
   ForbiddenException,
+  Query,
 } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
@@ -84,8 +85,10 @@ export class ProjectsController {
 
   @Get()
   @ApiOperation({ summary: 'Get all projects' })
-  findAll() {
-    return firstValueFrom(this.projectService.send('project.getAll', {}));
+  findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
+    return firstValueFrom(
+      this.projectService.send('project.getAll', { page, limit }),
+    );
   }
 
   @Get(':id')

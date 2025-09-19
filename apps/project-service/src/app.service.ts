@@ -1,18 +1,19 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import {
   DatabaseService,
   projects,
   type NewProject,
-  type UpdateProject,
 } from '@task-mgmt/database';
-import { eq } from 'drizzle-orm';
+import { UpdateProjectDto } from './dto/update-project.dto';
+import { eq, count, asc } from 'drizzle-orm';
+import { randomBytes } from 'node:crypto';
 
 @Injectable()
 export class AppService {
   constructor(private readonly databaseService: DatabaseService) {}
 
   createSlug(name: string): string {
-    const randomSuffix = Math.random().toString(36).substring(2, 8);
+    const randomSuffix = randomBytes(4).toString('hex'); // 8 characters
     const namePart = name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
@@ -22,17 +23,21 @@ export class AppService {
     return `${namePart}-${randomSuffix}`;
   }
 
-  create(data: NewProject) {
-    const slug = this.createSlug(data.name);
-
-    return this.databaseService.db
-      .insert(projects)
-      .values({
-        ...data,
-        slug: data.slug ?? slug,
-      })
-      .returning()
-      .execute();
+  async create(data: NewProject) {
+    const base = data.slug ?? this.createSlug(data.name);
+    for (let i = 0; i < 3; i++) {
+      const candidate = i === 0 ? base : `${base}-${i + 1}`;
+      const [created] = await this.databaseService.db
+        .insert(projects)
+        .values({ ...data, slug: candidate })
+        .onConflictDoNothing({ target: projects.slug })
+        .returning()
+        .execute();
+      if (created) return created;
+    }
+    throw new ConflictException(
+      'Could not generate a unique slug. Please try again.',
+    );
   }
 
   async findById(id: string) {
@@ -45,33 +50,40 @@ export class AppService {
   }
 
   async getAll(page: number = 1, limit: number = 10) {
-    const offset = (page - 1) * limit;
+    // Input validation - clamp page and limit values
+    const MIN_PAGE = 1;
+    const MIN_LIMIT = 1;
+    const MAX_LIMIT = 100;
 
-    const [data, totalCount] = await Promise.all([
+    const clampedPage = Math.max(MIN_PAGE, page);
+    const clampedLimit = Math.min(MAX_LIMIT, Math.max(MIN_LIMIT, limit));
+    const offset = (clampedPage - 1) * clampedLimit;
+
+    const [data, [{ count: total }]] = await Promise.all([
       this.databaseService.db
         .select()
         .from(projects)
-        .limit(limit)
+        .orderBy(asc(projects.id))
+        .limit(clampedLimit)
         .offset(offset)
         .execute(),
       this.databaseService.db
-        .select({ count: projects.id })
+        .select({ count: count() })
         .from(projects)
         .execute(),
     ]);
 
-    const total = totalCount.length;
-    const totalPages = Math.ceil(total / limit);
+    const totalPages = Math.ceil(total / clampedLimit);
 
     return {
       data,
       pagination: {
-        page,
-        limit,
+        page: clampedPage,
+        limit: clampedLimit,
         total,
         totalPages,
-        hasNext: page < totalPages,
-        hasPrev: page > 1,
+        hasNext: clampedPage < totalPages,
+        hasPrev: clampedPage > 1,
       },
     };
   }
@@ -87,7 +99,7 @@ export class AppService {
     };
   }
 
-  async updateProject(data: UpdateProject) {
+  async updateProject(data: UpdateProjectDto) {
     const { id, ...updateData } = data;
 
     const [project] = await this.databaseService.db

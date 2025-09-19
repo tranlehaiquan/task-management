@@ -58,9 +58,6 @@ export class AppController {
 
   @MessagePattern('project.transfer')
   transferProject(projectId: string, toUserId: string) {
-    return {
-      projectId,
-      toUserId,
-    };
+    return this.appService.transferProject(projectId, toUserId);
   }
 }

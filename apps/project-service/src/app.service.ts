@@ -81,7 +81,10 @@ export class AppService {
       .delete(projects)
       .where(eq(projects.id, id))
       .execute();
-    return { message: `Project with ID ${id} deleted.` };
+    return {
+      success: true,
+      message: `Project with ID ${id} deleted.`,
+    };
   }
 
   async updateProject(data: UpdateProject) {
@@ -94,5 +97,17 @@ export class AppService {
       .returning()
       .execute();
     return project;
+  }
+
+  async transferProject(projectId: string, toUserId: string) {
+    await this.databaseService.db
+      .update(projects)
+      .set({ ownerId: toUserId })
+      .where(eq(projects.id, projectId))
+      .execute();
+    return {
+      success: true,
+      message: `Project with ID ${projectId} transferred to user with ID ${toUserId}.`,
+    };
   }
 }

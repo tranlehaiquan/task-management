@@ -20,6 +20,7 @@ import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CurrentUser } from 'src/decorators/user.decorator';
 import { type Project } from '@task-mgmt/database';
 import { TransferProjectDto } from './dto/transfer-project.dto';
+import type { CurrentUser as CurrentUserType } from '@task-mgmt/shared-types';
 
 @Controller('projects')
 export class ProjectsController {
@@ -53,7 +54,7 @@ export class ProjectsController {
   @ApiOperation({ summary: 'Create a new project' })
   async create(
     @Body() createProjectDto: CreateProjectDto,
-    @CurrentUser() user,
+    @CurrentUser() user: CurrentUserType,
   ) {
     const ownerId = user.id;
 
@@ -100,7 +101,7 @@ export class ProjectsController {
   async update(
     @Param('id') id: string,
     @Body() updateProjectDto: UpdateProjectDto,
-    @CurrentUser() user,
+    @CurrentUser() user: CurrentUserType,
   ) {
     await this.validateProjectOwnership(id, user.id);
 
@@ -116,7 +117,7 @@ export class ProjectsController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Delete a project' })
-  async remove(@Param('id') id: string, @CurrentUser() user) {
+  async remove(@Param('id') id: string, @CurrentUser() user: CurrentUserType) {
     await this.validateProjectOwnership(id, user.id);
 
     return firstValueFrom(this.projectService.send('project.delete', id));
@@ -129,7 +130,7 @@ export class ProjectsController {
   async transfer(
     @Param('id') id: string,
     @Body() transferProjectDto: TransferProjectDto,
-    @CurrentUser() user,
+    @CurrentUser() user: CurrentUserType,
   ) {
     await this.validateProjectOwnership(id, user.id);
 
@@ -146,4 +147,10 @@ export class ProjectsController {
       }),
     );
   }
+
+  // GET    /api/projects/:id/members        - List project members
+  // POST   /api/projects/:id/members/invite - Invite user(s) to project
+  // PUT    /api/projects/:id/members/:userId - Update member role
+  // DELETE /api/projects/:id/members/:userId - Remove member
+  // POST   /api/projects/:id/members/bulk-invite - Bulk invite users
 }

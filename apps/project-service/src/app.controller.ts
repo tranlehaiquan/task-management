@@ -22,11 +22,10 @@ export class AppController {
         success: true,
         data: result,
       };
-    } catch (error) {
+    } catch {
       return {
         success: false,
         message: 'Failed to create project',
-        error,
       };
     }
   }

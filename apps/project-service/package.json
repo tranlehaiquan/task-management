@@ -30,6 +30,8 @@
     "@task-mgmt/shared-config": "workspace:*",
     "@task-mgmt/shared-types": "workspace:*",
     "@task-mgmt/shared-utils": "workspace:*",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
     "drizzle-orm": "^0.44.5",
     "neverthrow": "^8.2.0",
     "reflect-metadata": "^0.2.2",

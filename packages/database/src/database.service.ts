@@ -3,6 +3,7 @@ import {
   Inject,
   OnModuleInit,
   OnModuleDestroy,
+  Logger,
 } from '@nestjs/common';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool, PoolClient } from 'pg';
@@ -13,6 +14,7 @@ import { DB_OPTIONS, DBConfigType } from './database.interface';
 export class DatabaseService implements OnModuleInit, OnModuleDestroy {
   private pool: Pool;
   public db: ReturnType<typeof drizzle>;
+  private logger = new Logger(DatabaseService.name);
 
   constructor(@Inject(DB_OPTIONS) private options: DBConfigType) {
     this.pool = new Pool({
@@ -31,9 +33,9 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     let client: PoolClient | undefined;
     try {
       client = await this.pool.connect();
-      console.log('Connected to database with Drizzle');
+      this.logger.log('Connected to database with Drizzle');
     } catch (error) {
-      console.error('Failed to connect to database:', error);
+      this.logger.error('Failed to connect to database:', error);
       throw error;
     } finally {
       client?.release();

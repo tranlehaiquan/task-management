@@ -28,5 +28,5 @@
     }
   },
   "ui": "tui",
-  "concurrency": "11"
+  "concurrency": "12"
 }

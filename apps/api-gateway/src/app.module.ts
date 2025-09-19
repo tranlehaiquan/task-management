@@ -33,6 +33,18 @@ import { TasksModule } from './tasks/tasks.module';
         },
       },
     ]),
+    ClientsModule.register([
+      {
+        name: 'PROJECT_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: '0.0.0.0',
+          port: Number(
+            process.env.PROJECT_SERVICE_PORT ?? PORTS.PROJECT_SERVICE,
+          ),
+        },
+      },
+    ]),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',

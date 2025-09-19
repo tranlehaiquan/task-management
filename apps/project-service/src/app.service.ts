@@ -1,7 +1,13 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import {
   DatabaseService,
   projects,
+  users,
   type NewProject,
 } from '@task-mgmt/database';
 import { UpdateProjectDto } from './dto/update-project.dto';
@@ -116,11 +122,47 @@ export class AppService {
   }
 
   async transferProject(projectId: string, toUserId: string) {
-    await this.databaseService.db
-      .update(projects)
-      .set({ ownerId: toUserId })
+    // Step 1: Validate project exists
+    const [project] = await this.databaseService.db
+      .select()
+      .from(projects)
       .where(eq(projects.id, projectId))
       .execute();
+
+    if (!project) {
+      throw new NotFoundException(`Project with ID ${projectId} not found`);
+    }
+
+    // Step 2: Check for no-op transfer (same owner)
+    if (project.ownerId === toUserId) {
+      throw new BadRequestException(
+        'Project is already owned by the specified user - no transfer needed',
+      );
+    }
+
+    // Step 3: Validate target user exists
+    const [targetUser] = await this.databaseService.db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.id, toUserId))
+      .execute();
+
+    if (!targetUser) {
+      throw new NotFoundException(`User with ID ${toUserId} not found`);
+    }
+
+    // Step 4: Perform transfer in transaction
+    await this.databaseService.db.transaction(async (tx) => {
+      await tx
+        .update(projects)
+        .set({
+          ownerId: toUserId,
+          updatedAt: new Date(),
+        })
+        .where(eq(projects.id, projectId))
+        .execute();
+    });
+
     return {
       success: true,
       message: `Project with ID ${projectId} transferred to user with ID ${toUserId}.`,

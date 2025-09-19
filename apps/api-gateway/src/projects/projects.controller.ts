@@ -11,6 +11,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Query,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
@@ -22,27 +23,14 @@ import { CurrentUser } from 'src/decorators/user.decorator';
 import { type Project } from '@task-mgmt/database';
 import { TransferProjectDto } from './dto/transfer-project.dto';
 import type { CurrentUser as CurrentUserType } from '@task-mgmt/shared-types';
+import { ProjectValidationService } from './project-validation.service';
 
 @Controller('projects')
 export class ProjectsController {
   constructor(
     @Inject('PROJECT_SERVICE') private readonly projectService: ClientProxy,
+    private readonly projectValidationService: ProjectValidationService,
   ) {}
-
-  private async validateProjectOwnership(
-    projectId: string,
-    userId: string,
-  ): Promise<void> {
-    const project = (await this.findOne(projectId)) as unknown as Project;
-
-    if (!project) {
-      throw new BadRequestException('Project not found');
-    }
-
-    if (project.ownerId !== userId) {
-      throw new ForbiddenException('You are not the owner of this project');
-    }
-  }
 
   @Get('ping')
   async ping() {
@@ -106,7 +94,7 @@ export class ProjectsController {
     @Body() updateProjectDto: UpdateProjectDto,
     @CurrentUser() user: CurrentUserType,
   ) {
-    await this.validateProjectOwnership(id, user.id);
+    await this.projectValidationService.validateProjectOwnership(id, user.id);
 
     return firstValueFrom(
       this.projectService.send('project.update', {
@@ -121,7 +109,7 @@ export class ProjectsController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Delete a project' })
   async remove(@Param('id') id: string, @CurrentUser() user: CurrentUserType) {
-    await this.validateProjectOwnership(id, user.id);
+    await this.projectValidationService.validateProjectOwnership(id, user.id);
 
     return firstValueFrom(this.projectService.send('project.delete', id));
   }
@@ -131,11 +119,11 @@ export class ProjectsController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Transfer a project to a new owner' })
   async transfer(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() transferProjectDto: TransferProjectDto,
     @CurrentUser() user: CurrentUserType,
-  ) {
-    await this.validateProjectOwnership(id, user.id);
+  ): Promise<Project> {
+    await this.projectValidationService.validateProjectOwnership(id, user.id);
 
     if (transferProjectDto.toUserId === user.id) {
       throw new BadRequestException(
@@ -143,11 +131,11 @@ export class ProjectsController {
       );
     }
 
-    return await firstValueFrom(
-      this.projectService.send('project.transfer', {
+    return firstValueFrom<Project>(
+      this.projectService.send<Project>('project.transfer', [
         id,
-        toUserId: transferProjectDto.toUserId,
-      }),
+        transferProjectDto.toUserId,
+      ]),
     );
   }
 

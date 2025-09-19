@@ -84,5 +84,15 @@ export class AppService {
     return { message: `Project with ID ${id} deleted.` };
   }
 
-  async updateProject(data: UpdateProject) {}
+  async updateProject(data: UpdateProject) {
+    const { id, ...updateData } = data;
+
+    const [project] = await this.databaseService.db
+      .update(projects)
+      .set(updateData)
+      .where(eq(projects.id, id))
+      .returning()
+      .execute();
+    return project;
+  }
 }

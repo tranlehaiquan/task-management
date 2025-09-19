@@ -15,8 +15,20 @@ export class AppController {
   }
 
   @MessagePattern('project.create')
-  createProject(data: NewProject) {
-    return this.appService.create(data);
+  async createProject(data: NewProject) {
+    try {
+      const result = await this.appService.create(data);
+      return {
+        success: true,
+        data: result,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Failed to create project',
+        error,
+      };
+    }
   }
 
   @MessagePattern('project.findById')
@@ -26,7 +38,6 @@ export class AppController {
 
   @MessagePattern('project.getAll')
   getAllProjects(page?: number, limit?: number) {
-    console.log('page, limit', page, limit);
     return this.appService.getAll(page, limit);
   }
 

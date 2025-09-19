@@ -8,13 +8,17 @@ import {
   Delete,
   UseGuards,
   Inject,
+  BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { AuthGuard } from 'src/guards/auth.guards';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { CurrentUser } from 'src/decorators/user.decorator';
+import { type Project } from '@task-mgmt/database';
 
 @Controller('projects')
 export class ProjectsController {
@@ -29,10 +33,36 @@ export class ProjectsController {
 
   @Post()
   @UseGuards(AuthGuard)
-  create(@Body() createProjectDto: CreateProjectDto) {
-    return firstValueFrom(
-      this.projectService.send('project.create', createProjectDto),
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Create a new project' })
+  async create(
+    @Body() createProjectDto: CreateProjectDto,
+    @CurrentUser() user,
+  ) {
+    const ownerId = user.id;
+
+    const data = await firstValueFrom<
+      | {
+          success: true;
+          data: any;
+        }
+      | {
+          success: false;
+          message: string;
+          error: any;
+        }
+    >(
+      this.projectService.send('project.create', {
+        ...createProjectDto,
+        ownerId,
+      }),
     );
+
+    if (!data.success) {
+      throw new BadRequestException(data.message || 'Failed to create project');
+    }
+
+    return data.data;
   }
 
   @Get()
@@ -43,13 +73,35 @@ export class ProjectsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get project by ID' })
-  findOne(@Param('id') id: string) {
-    // return this.projectsService.findOne(+id);
+  async findOne(@Param('id') id: string) {
+    return await firstValueFrom(this.projectService.send('project.get', id));
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateProjectDto: UpdateProjectDto) {
-    // return this.projectsService.update(+id, updateProjectDto);
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Update a project' })
+  async update(
+    @Param('id') id: string,
+    @Body() updateProjectDto: UpdateProjectDto,
+    @CurrentUser() user,
+  ) {
+    const project = (await this.findOne(id)) as unknown as Project;
+
+    if (!project) {
+      throw new BadRequestException('Project not found');
+    }
+
+    if (project.ownerId !== user.id) {
+      throw new ForbiddenException('You are not the owner of this project');
+    }
+
+    return firstValueFrom(
+      this.projectService.send('project.update', {
+        id,
+        ...updateProjectDto,
+      }),
+    );
   }
 
   @Delete(':id')

@@ -90,13 +90,13 @@ export class ProjectsController {
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Update a project' })
   async update(
-    @Param('id') id: string,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() updateProjectDto: UpdateProjectDto,
     @CurrentUser() user: CurrentUserType,
-  ) {
+  ): Promise<Project> {
     await this.projectValidationService.validateProjectOwnership(id, user.id);
 
-    return firstValueFrom(
+    return firstValueFrom<Project>(
       this.projectService.send('project.update', {
         id,
         ...updateProjectDto,

@@ -140,10 +140,10 @@ export class ProjectsController {
     }
 
     return firstValueFrom<Project>(
-      this.projectService.send<Project>('project.transfer', [
+      this.projectService.send<Project>('project.transfer', {
         id,
-        transferProjectDto.toUserId,
-      ]),
+        toUserId: transferProjectDto.toUserId,
+      }),
     );
   }
 

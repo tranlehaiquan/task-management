@@ -18,7 +18,7 @@ import { TasksModule } from './tasks/tasks.module';
         name: 'USER_SERVICE',
         transport: Transport.TCP,
         options: {
-          host: '0.0.0.0',
+          host: '127.0.0.1',
           port: Number(process.env.USER_SERVICE_PORT ?? PORTS.USER_SERVICE),
         },
       },
@@ -28,7 +28,7 @@ import { TasksModule } from './tasks/tasks.module';
         name: 'TOKEN_SERVICE',
         transport: Transport.TCP,
         options: {
-          host: '0.0.0.0',
+          host: '127.0.0.1',
           port: Number(process.env.TOKEN_SERVICE_PORT ?? PORTS.TOKEN_SERVICE),
         },
       },
@@ -38,7 +38,7 @@ import { TasksModule } from './tasks/tasks.module';
         name: 'PROJECT_SERVICE',
         transport: Transport.TCP,
         options: {
-          host: '0.0.0.0',
+          host: process.env.PROJECT_SERVICE_HOST ?? '127.0.0.1',
           port: Number(
             process.env.PROJECT_SERVICE_PORT ?? PORTS.PROJECT_SERVICE,
           ),

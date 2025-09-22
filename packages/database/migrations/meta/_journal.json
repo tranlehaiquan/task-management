@@ -50,6 +50,13 @@
       "when": 1758171618940,
       "tag": "0006_robust_hydra",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1758300438699,
+      "tag": "0007_stiff_smasher",
+      "breakpoints": true
     }
   ]
 }

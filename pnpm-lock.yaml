@@ -381,6 +381,12 @@ importers:
       '@task-mgmt/shared-utils':
         specifier: workspace:*
         version: link:../../packages/shared-utils
+      class-transformer:
+        specifier: ^0.5.1
+        version: 0.5.1
+      class-validator:
+        specifier: ^0.14.2
+        version: 0.14.2
       drizzle-orm:
         specifier: ^0.44.5
         version: 0.44.5(@types/pg@8.15.5)(gel@2.1.1)(pg@8.16.3)(postgres@3.4.7)

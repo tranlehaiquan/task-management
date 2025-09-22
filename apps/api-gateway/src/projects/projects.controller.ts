@@ -80,8 +80,12 @@ export class ProjectsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get project by ID' })
-  async findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<Project> {
-    return await firstValueFrom(this.projectService.send<Project>('project.get', id));
+  async findOne(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ): Promise<Project> {
+    return await firstValueFrom(
+      this.projectService.send<Project>('project.get', id),
+    );
   }
 
   @Patch(':id')
@@ -114,7 +118,7 @@ export class ProjectsController {
     await this.projectValidationService.validateProjectOwnership(id, user.id);
 
     return firstValueFrom<{ success: boolean; message: string }>(
-      this.projectService.send('project.delete', id)
+      this.projectService.send('project.delete', id),
     );
   }
 

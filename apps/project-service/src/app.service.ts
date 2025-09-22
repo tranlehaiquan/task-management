@@ -32,7 +32,7 @@ export class AppService {
   async create(data: NewProject) {
     const base = data.slug ?? this.createSlug(data.name);
     for (let i = 0; i < 3; i++) {
-      const candidate = i === 0 ? base : `${base}-${i + 1}`;
+      const candidate = i === 0 ? base : `${base}-${i}`;
       const [created] = await this.databaseService.db
         .insert(projects)
         .values({ ...data, slug: candidate })

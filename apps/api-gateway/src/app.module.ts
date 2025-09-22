@@ -7,6 +7,8 @@ import { ConfigModule } from '@nestjs/config';
 import { PORTS } from '@task-mgmt/shared-config';
 import { AuthModule } from './auth/auth.module';
 import { LoggerMiddleware } from './middleware/logger.middleware';
+import { ProjectsModule } from './projects/projects.module';
+import { TasksModule } from './tasks/tasks.module';
 
 @Global()
 @Module({
@@ -16,7 +18,7 @@ import { LoggerMiddleware } from './middleware/logger.middleware';
         name: 'USER_SERVICE',
         transport: Transport.TCP,
         options: {
-          host: '0.0.0.0',
+          host: '127.0.0.1',
           port: Number(process.env.USER_SERVICE_PORT ?? PORTS.USER_SERVICE),
         },
       },
@@ -26,8 +28,20 @@ import { LoggerMiddleware } from './middleware/logger.middleware';
         name: 'TOKEN_SERVICE',
         transport: Transport.TCP,
         options: {
-          host: '0.0.0.0',
+          host: '127.0.0.1',
           port: Number(process.env.TOKEN_SERVICE_PORT ?? PORTS.TOKEN_SERVICE),
+        },
+      },
+    ]),
+    ClientsModule.register([
+      {
+        name: 'PROJECT_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: process.env.PROJECT_SERVICE_HOST ?? '127.0.0.1',
+          port: Number(
+            process.env.PROJECT_SERVICE_PORT ?? PORTS.PROJECT_SERVICE,
+          ),
         },
       },
     ]),
@@ -37,6 +51,8 @@ import { LoggerMiddleware } from './middleware/logger.middleware';
     }),
     UsersModule,
     AuthModule,
+    ProjectsModule,
+    TasksModule,
   ],
   controllers: [AppController],
   providers: [AppService],

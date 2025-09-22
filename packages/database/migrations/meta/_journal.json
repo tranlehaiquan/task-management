@@ -22,6 +22,41 @@
       "when": 1757841298325,
       "tag": "0002_eminent_romulus",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1758171475388,
+      "tag": "0003_square_omega_sentinel",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1758171499925,
+      "tag": "0004_goofy_mariko_yashida",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1758171589629,
+      "tag": "0005_simple_mandarin",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1758171618940,
+      "tag": "0006_robust_hydra",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1758300438699,
+      "tag": "0007_stiff_smasher",
+      "breakpoints": true
     }
   ]
 }

@@ -183,7 +183,6 @@ export class UsersController {
     if (result.success && result.shouldSendWelcomeEmail && result.userId) {
       try {
         await this.sendWelcomeEmail({ userId: result.userId });
-        console.log(`Welcome email sent to user: ${result.userId}`);
       } catch (error) {
         console.error(
           `Failed to send welcome email to user ${result.userId}:`,

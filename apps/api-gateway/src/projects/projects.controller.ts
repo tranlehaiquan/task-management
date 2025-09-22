@@ -10,6 +10,7 @@ import {
   Inject,
   BadRequestException,
   ForbiddenException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
@@ -44,12 +45,12 @@ export class ProjectsController {
     const data = await firstValueFrom<
       | {
           success: true;
-          data: any;
+          data: Project;
         }
       | {
           success: false;
           message: string;
-          error: any;
+          error?: unknown;
         }
     >(
       this.projectService.send('project.create', {
@@ -73,8 +74,8 @@ export class ProjectsController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Get project by ID' })
-  async findOne(@Param('id') id: string) {
-    return await firstValueFrom(this.projectService.send('project.get', id));
+  async findOne(@Param('id', new ParseUUIDPipe()) id: string): Promise<Project> {
+    return await firstValueFrom(this.projectService.send<Project>('project.get', id));
   }
 
   @Patch(':id')

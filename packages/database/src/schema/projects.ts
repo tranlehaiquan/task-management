@@ -25,12 +25,10 @@ export type NewProject = typeof projects.$inferInsert;
 
 export type UpdateProject = Pick<Project, 'id' | 'name' | 'description'>;
 
-export const projectRoles = pgEnum('project_role', [
-  'owner',
-  'admin',
-  'member',
-  'viewer',
-] as const);
+const PROJECT_ROLES = ['owner', 'admin', 'member', 'viewer'] as const;
+
+export type ProjectRole = typeof PROJECT_ROLES[number];
+export const projectRoles = pgEnum('project_role', PROJECT_ROLES);
 
 export const projectMembers = pgTable('project_members', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -46,4 +44,3 @@ export const projectMembers = pgTable('project_members', {
 
 export type ProjectMember = typeof projectMembers.$inferSelect;
 export type NewProjectMember = typeof projectMembers.$inferInsert;
-export type ProjectRole = (typeof projectRoles.enumValues)[number];

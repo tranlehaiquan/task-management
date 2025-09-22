@@ -8,11 +8,14 @@ import {
   DatabaseService,
   projects,
   users,
+  projectMembers,
   type NewProject,
+  NewProjectMember,
 } from '@task-mgmt/database';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { eq, count, asc } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
+import { CreateMembersDto } from './dto/create-member.dto';
 
 @Injectable()
 export class AppService {
@@ -166,6 +169,40 @@ export class AppService {
     return {
       success: true,
       message: `Project with ID ${projectId} transferred to user with ID ${toUserId}.`,
+    };
+  }
+
+  async createMembers(data: CreateMembersDto) {
+    const { projectId, members } = data;
+
+    const projectRecord = await this.databaseService.db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectId));
+
+    if (!projectRecord) {
+      return {
+        success: false,
+        message: `Can't front project`,
+        code: 'PROJECT_NOT_FOUNT',
+      };
+    }
+
+    const newMembers: NewProjectMember[] = members.map((i) => ({
+      projectId,
+      ...i,
+    }));
+
+    const membersRecord = await this.databaseService.db
+      .insert(projectMembers)
+      .values(newMembers)
+      .returning()
+      .execute();
+
+    return {
+      success: true,
+      message: `Added ${membersRecord.length} members to project`,
+      data: membersRecord,
     };
   }
 }

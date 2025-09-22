@@ -108,10 +108,15 @@ export class ProjectsController {
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Delete a project' })
-  async remove(@Param('id') id: string, @CurrentUser() user: CurrentUserType) {
+  async remove(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<{ success: boolean; message: string }> {
     await this.projectValidationService.validateProjectOwnership(id, user.id);
 
-    return firstValueFrom(this.projectService.send('project.delete', id));
+    return firstValueFrom<{ success: boolean; message: string }>(
+      this.projectService.send('project.delete', id)
+    );
   }
 
   @Post(':id/transfer')

@@ -27,7 +27,15 @@ export class ProjectValidationService {
         throw new NotFoundException('Project not found');
       }
 
-      if (project.ownerId !== userId) {
+      // Check if user is the owner via projectMembers
+      const isOwner = await firstValueFrom<boolean>(
+        this.projectService.send('project.checkOwnership', {
+          projectId,
+          userId,
+        }),
+      );
+
+      if (!isOwner) {
         throw new ForbiddenException('You are not the owner of this project');
       }
 

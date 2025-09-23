@@ -21,8 +21,4 @@ export class UpdateProjectDto {
   @IsOptional()
   @IsString()
   slug?: string;
-
-  @IsOptional()
-  @IsUUID()
-  ownerId?: string;
 }

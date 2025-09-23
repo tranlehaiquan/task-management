@@ -19,13 +19,15 @@ export class AppController {
   }
 
   @MessagePattern('project.create')
-  async createProject(data: NewProject) {
+  async createProject(data: {
+    name: string;
+    description?: string;
+    slug?: string;
+    ownerId: string;
+  }) {
     try {
       const result = await this.appService.create(data);
-      return {
-        success: true,
-        data: result,
-      };
+      return result;
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : 'Failed to create project';
@@ -72,5 +74,10 @@ export class AppController {
       projectId: data.projectId,
       members: [{ userId: data.userId, role: data.role }],
     });
+  }
+
+  @MessagePattern('project.checkOwnership')
+  checkOwnership(@Payload() data: { projectId: string; userId: string }) {
+    return this.appService.checkOwnership(data.projectId, data.userId);
   }
 }

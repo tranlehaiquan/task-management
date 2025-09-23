@@ -44,28 +44,48 @@ export class AppService {
 
     for (let i = 0; i < 3; i++) {
       const candidate = i === 0 ? base : `${base}-${i}`;
-      const [created] = await this.databaseService.db
-        .insert(projects)
-        .values({ ...projectData, slug: candidate })
-        .onConflictDoNothing({ target: projects.slug })
-        .returning()
-        .execute();
-      if (created) {
-        // create project member for the owner
-        await this.databaseService.db
-          .insert(projectMembers)
-          .values({
-            projectId: created.id,
-            userId: ownerId,
-            role: 'owner',
-          })
-          .execute();
 
-        return {
-          success: true,
-          message: 'Project created successfully',
-          data: created,
-        };
+      try {
+        const result = await this.databaseService.db.transaction(async (tx) => {
+          // Attempt to insert the project
+          const [created] = await tx
+            .insert(projects)
+            .values({ ...projectData, slug: candidate })
+            .onConflictDoNothing({ target: projects.slug })
+            .returning()
+            .execute();
+
+          // If project creation failed due to conflict, return null
+          if (!created) {
+            return null;
+          }
+
+          // Insert the owner as a project member
+          await tx
+            .insert(projectMembers)
+            .values({
+              projectId: created.id,
+              userId: ownerId,
+              role: 'owner',
+            })
+            .execute();
+
+          return created;
+        });
+
+        // If transaction succeeded and project was created
+        if (result) {
+          return {
+            success: true,
+            message: 'Project created successfully',
+            data: result,
+          };
+        }
+
+        // If result is null, it means slug conflict - continue to next iteration
+      } catch (error) {
+        // If transaction failed, re-throw the error
+        throw error;
       }
     }
 

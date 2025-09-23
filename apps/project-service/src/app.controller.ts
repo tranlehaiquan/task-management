@@ -5,6 +5,7 @@ import { type NewProject } from '@task-mgmt/database';
 import { TransferProjectDto } from './dto/transfer-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { GetAllProjectsDto } from './dto/get-all-projects.dto';
+import { CreateMemberDto } from './dto/create-member.dto';
 
 @Controller()
 export class AppController {
@@ -63,5 +64,13 @@ export class AppController {
   @MessagePattern('project.transfer')
   transferProject(@Payload() data: TransferProjectDto) {
     return this.appService.transferProject(data.id, data.toUserId);
+  }
+
+  @MessagePattern('member.create')
+  createMember(data: CreateMemberDto) {
+    return this.appService.createMembers({
+      projectId: data.projectId,
+      members: [{ userId: data.userId, role: data.role }],
+    });
   }
 }

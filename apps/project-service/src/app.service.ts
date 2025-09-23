@@ -310,7 +310,16 @@ export class AppService {
   async validateProjectOwnership(
     projectId: string,
     userId: string,
-  ): Promise<Project | null> {
+  ): Promise<
+    | {
+        success: true;
+        project?: Project;
+      }
+    | {
+        success: false;
+        code: 'PROJECT_NOT_FOUND' | 'FORBIDDEN';
+      }
+  > {
     // Single query with JOIN to atomically check both project existence and ownership
     const [result] = await this.databaseService.db
       .select({
@@ -330,13 +339,22 @@ export class AppService {
       .execute();
 
     if (!result?.project) {
-      return null; // Project doesn't exist
+      return {
+        success: false,
+        code: 'PROJECT_NOT_FOUND',
+      };
     }
 
     if (!result.isOwner) {
-      throw new Error('FORBIDDEN'); // Project exists but user is not owner
+      return {
+        success: false,
+        code: 'FORBIDDEN',
+      };
     }
 
-    return result.project;
+    return {
+      success: true,
+      project: result.project,
+    };
   }
 }

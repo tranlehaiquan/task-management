@@ -20,49 +20,42 @@ export class ProjectValidationService {
     userId: string,
   ): Promise<Project> {
     try {
-      const response = await firstValueFrom<{
-        success?: boolean;
-        data?: Project;
-        error?: 'NOT_FOUND' | 'FORBIDDEN' | 'INTERNAL_ERROR';
-        message?: string;
-      }>(
+      const response = await firstValueFrom<
+        | {
+            success: false;
+            code: 'PROJECT_NOT_FOUND' | 'FORBIDDEN' | 'INTERNAL_ERROR';
+          }
+        | {
+            success: true;
+            project: Project;
+          }
+      >(
         this.projectService.send('project.validateOwnership', {
           projectId,
           userId,
         }),
       );
 
-      if (response.error === 'NOT_FOUND') {
+      if (response.success) {
+        return response.project;
+      }
+
+      if (response.code === 'PROJECT_NOT_FOUND') {
         throw new NotFoundException('Project not found');
       }
 
-      if (response.error === 'FORBIDDEN') {
+      if (response.code === 'FORBIDDEN') {
         throw new ForbiddenException('You are not the owner of this project');
       }
 
-      if (response.error === 'INTERNAL_ERROR') {
-        throw new ServiceUnavailableException(
-          'Project service is temporarily unavailable',
-        );
-      }
-
-      if (response.success && response.data) {
-        return response.data;
-      }
-
-      // Fallback for unexpected response format
-      throw new NotFoundException('Project not found');
+      throw new ServiceUnavailableException(
+        'Project service is temporarily unavailable',
+      );
     } catch (error) {
-      // If the error is already one of our custom exceptions, re-throw it
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ForbiddenException
-      ) {
-        throw error;
-      }
-
-      // If it's any other error (like microservice communication error), treat as not found
-      throw new NotFoundException('Project not found');
+      // fallback in case can't connect to project service
+      throw new ServiceUnavailableException(
+        'Project service is temporarily unavailable',
+      );
     }
   }
 }

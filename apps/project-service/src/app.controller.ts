@@ -85,20 +85,13 @@ export class AppController {
         data.projectId,
         data.userId,
       );
-      if (project === null) {
-        return { error: 'NOT_FOUND', message: 'Project not found' };
-      }
-      return { success: true, data: project };
+
+      return project;
     } catch (error: unknown) {
-      if (error instanceof Error && error.message === 'FORBIDDEN') {
-        return {
-          error: 'FORBIDDEN',
-          message: 'You are not the owner of this project',
-        };
-      }
+      console.error(error);
       return {
-        error: 'INTERNAL_ERROR',
-        message: 'An unexpected error occurred',
+        success: false,
+        code: 'INTERNAL_ERROR',
       };
     }
   }

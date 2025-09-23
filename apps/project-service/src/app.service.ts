@@ -307,19 +307,36 @@ export class AppService {
     };
   }
 
-  async checkOwnership(projectId: string, userId: string): Promise<boolean> {
-    const [member] = await this.databaseService.db
-      .select({ role: projectMembers.role })
-      .from(projectMembers)
-      .where(
+  async validateProjectOwnership(
+    projectId: string,
+    userId: string,
+  ): Promise<Project | null> {
+    // Single query with JOIN to atomically check both project existence and ownership
+    const [result] = await this.databaseService.db
+      .select({
+        project: projects,
+        isOwner: projectMembers.role,
+      })
+      .from(projects)
+      .leftJoin(
+        projectMembers,
         and(
-          eq(projectMembers.projectId, projectId),
+          eq(projectMembers.projectId, projects.id),
           eq(projectMembers.userId, userId),
           eq(projectMembers.role, 'owner'),
         ),
       )
+      .where(eq(projects.id, projectId))
       .execute();
 
-    return !!member;
+    if (!result?.project) {
+      return null; // Project doesn't exist
+    }
+
+    if (!result.isOwner) {
+      throw new Error('FORBIDDEN'); // Project exists but user is not owner
+    }
+
+    return result.project;
   }
 }

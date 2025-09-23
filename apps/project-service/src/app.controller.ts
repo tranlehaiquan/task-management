@@ -76,8 +76,30 @@ export class AppController {
     });
   }
 
-  @MessagePattern('project.checkOwnership')
-  checkOwnership(@Payload() data: { projectId: string; userId: string }) {
-    return this.appService.checkOwnership(data.projectId, data.userId);
+  @MessagePattern('project.validateOwnership')
+  async validateOwnership(
+    @Payload() data: { projectId: string; userId: string },
+  ) {
+    try {
+      const project = await this.appService.validateProjectOwnership(
+        data.projectId,
+        data.userId,
+      );
+      if (project === null) {
+        return { error: 'NOT_FOUND', message: 'Project not found' };
+      }
+      return { success: true, data: project };
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message === 'FORBIDDEN') {
+        return {
+          error: 'FORBIDDEN',
+          message: 'You are not the owner of this project',
+        };
+      }
+      return {
+        error: 'INTERNAL_ERROR',
+        message: 'An unexpected error occurred',
+      };
+    }
   }
 }

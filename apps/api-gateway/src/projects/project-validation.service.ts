@@ -19,27 +19,36 @@ export class ProjectValidationService {
     userId: string,
   ): Promise<Project> {
     try {
-      const project = await firstValueFrom<Project>(
-        this.projectService.send('project.get', projectId),
-      );
-
-      if (!project) {
-        throw new NotFoundException('Project not found');
-      }
-
-      // Check if user is the owner via projectMembers
-      const isOwner = await firstValueFrom<boolean>(
-        this.projectService.send('project.checkOwnership', {
+      const response = await firstValueFrom<{
+        success?: boolean;
+        data?: Project;
+        error?: 'NOT_FOUND' | 'FORBIDDEN' | 'INTERNAL_ERROR';
+        message?: string;
+      }>(
+        this.projectService.send('project.validateOwnership', {
           projectId,
           userId,
         }),
       );
 
-      if (!isOwner) {
+      if (response.error === 'NOT_FOUND') {
+        throw new NotFoundException('Project not found');
+      }
+
+      if (response.error === 'FORBIDDEN') {
         throw new ForbiddenException('You are not the owner of this project');
       }
 
-      return project;
+      if (response.error === 'INTERNAL_ERROR') {
+        throw new NotFoundException('Project not found');
+      }
+
+      if (response.success && response.data) {
+        return response.data;
+      }
+
+      // Fallback for unexpected response format
+      throw new NotFoundException('Project not found');
     } catch (error) {
       // If the error is already one of our custom exceptions, re-throw it
       if (

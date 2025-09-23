@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  ServiceUnavailableException,
   Inject,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -40,7 +41,9 @@ export class ProjectValidationService {
       }
 
       if (response.error === 'INTERNAL_ERROR') {
-        throw new NotFoundException('Project not found');
+        throw new ServiceUnavailableException(
+          'Project service is temporarily unavailable',
+        );
       }
 
       if (response.success && response.data) {

@@ -25,6 +25,9 @@ import { ConfigModule } from '@nestjs/config';
     BullModule.registerQueue({
       name: 'email',
     }),
+    BullModule.registerQueue({
+      name: 'stressTest',
+    }),
   ],
   providers: [EmailConsumer],
 })

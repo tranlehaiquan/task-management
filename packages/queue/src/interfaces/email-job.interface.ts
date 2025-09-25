@@ -1,10 +1,14 @@
 export interface EmailJob {
   to: string;
-  subject: string;
-  text: string;
-  html: string;
-  template?: string;
-  templateData?: Record<string, unknown>;
+  subject?: string;
+  text?: string;
+  html?: string;
+  template?: 'verification' | 'password-reset' | 'welcome';
+  templateData?: {
+    frontendUrl?: string;
+    token?: string;
+    userName?: string;
+  };
   priority?: number;
   delay?: number;
   attempts?: number;

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  ServiceUnavailableException,
   Inject,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -19,30 +20,42 @@ export class ProjectValidationService {
     userId: string,
   ): Promise<Project> {
     try {
-      const project = await firstValueFrom<Project>(
-        this.projectService.send('project.get', projectId),
+      const response = await firstValueFrom<
+        | {
+            success: false;
+            code: 'PROJECT_NOT_FOUND' | 'FORBIDDEN' | 'INTERNAL_ERROR';
+          }
+        | {
+            success: true;
+            project: Project;
+          }
+      >(
+        this.projectService.send('project.validateOwnership', {
+          projectId,
+          userId,
+        }),
       );
 
-      if (!project) {
+      if (response.success) {
+        return response.project;
+      }
+
+      if (response.code === 'PROJECT_NOT_FOUND') {
         throw new NotFoundException('Project not found');
       }
 
-      if (project.ownerId !== userId) {
+      if (response.code === 'FORBIDDEN') {
         throw new ForbiddenException('You are not the owner of this project');
       }
 
-      return project;
+      throw new ServiceUnavailableException(
+        'Project service is temporarily unavailable',
+      );
     } catch (error) {
-      // If the error is already one of our custom exceptions, re-throw it
-      if (
-        error instanceof NotFoundException ||
-        error instanceof ForbiddenException
-      ) {
-        throw error;
-      }
-
-      // If it's any other error (like microservice communication error), treat as not found
-      throw new NotFoundException('Project not found');
+      // fallback in case can't connect to project service
+      throw new ServiceUnavailableException(
+        'Project service is temporarily unavailable',
+      );
     }
   }
 }

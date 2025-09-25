@@ -11,9 +11,10 @@ import {
   projectMembers,
   type NewProject,
   NewProjectMember,
+  Project,
 } from '@task-mgmt/database';
 import { UpdateProjectDto } from './dto/update-project.dto';
-import { eq, count, asc } from 'drizzle-orm';
+import { eq, count, asc, and } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import { CreateMembersDto } from './dto/create-member.dto';
 
@@ -32,18 +33,57 @@ export class AppService {
     return `${namePart}-${randomSuffix}`;
   }
 
-  async create(data: NewProject) {
+  async create(data: {
+    name: string;
+    description?: string;
+    slug?: string;
+    ownerId: string;
+  }) {
     const base = data.slug ?? this.createSlug(data.name);
+    const { ownerId, ...projectData } = data;
+
     for (let i = 0; i < 3; i++) {
       const candidate = i === 0 ? base : `${base}-${i}`;
-      const [created] = await this.databaseService.db
-        .insert(projects)
-        .values({ ...data, slug: candidate })
-        .onConflictDoNothing({ target: projects.slug })
-        .returning()
-        .execute();
-      if (created) return created;
+
+      const result = await this.databaseService.db.transaction(async (tx) => {
+        // Attempt to insert the project
+        const [created] = await tx
+          .insert(projects)
+          .values({ ...projectData, slug: candidate })
+          .onConflictDoNothing({ target: projects.slug })
+          .returning()
+          .execute();
+
+        // If project creation failed due to conflict, return null
+        if (!created) {
+          return null;
+        }
+
+        // Insert the owner as a project member
+        await tx
+          .insert(projectMembers)
+          .values({
+            projectId: created.id,
+            userId: ownerId,
+            role: 'owner',
+          })
+          .execute();
+
+        return created;
+      });
+
+      // If transaction succeeded and project was created
+      if (result) {
+        return {
+          success: true,
+          message: 'Project created successfully',
+          data: result,
+        };
+      }
+
+      // If result is null, it means slug conflict - continue to next iteration
     }
+
     throw new ConflictException(
       'Could not generate a unique slug. Please try again.',
     );
@@ -136,14 +176,32 @@ export class AppService {
       throw new NotFoundException(`Project with ID ${projectId} not found`);
     }
 
-    // Step 2: Check for no-op transfer (same owner)
-    if (project.ownerId === toUserId) {
+    // Step 2: Get current owner from projectMembers
+    const [currentOwner] = await this.databaseService.db
+      .select({ userId: projectMembers.userId })
+      .from(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, projectId),
+          eq(projectMembers.role, 'owner'),
+        ),
+      )
+      .execute();
+
+    if (!currentOwner) {
+      throw new NotFoundException(
+        `Current owner not found for project ${projectId}`,
+      );
+    }
+
+    // Step 3: Check for no-op transfer (same owner)
+    if (currentOwner.userId === toUserId) {
       throw new BadRequestException(
         'Project is already owned by the specified user - no transfer needed',
       );
     }
 
-    // Step 3: Validate target user exists
+    // Step 4: Validate target user exists
     const [targetUser] = await this.databaseService.db
       .select({ id: users.id })
       .from(users)
@@ -154,14 +212,57 @@ export class AppService {
       throw new NotFoundException(`User with ID ${toUserId} not found`);
     }
 
-    // Step 4: Perform transfer in transaction
+    // Step 5: Validate target user is a project member
+    const [membership] = await this.databaseService.db
+      .select({
+        id: projectMembers.id,
+        role: projectMembers.role,
+      })
+      .from(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, projectId),
+          eq(projectMembers.userId, toUserId),
+        ),
+      )
+      .execute();
+
+    if (!membership) {
+      throw new BadRequestException(
+        'Target user must be a project member before ownership can be transferred',
+      );
+    }
+
+    // Step 6: Perform transfer in transaction
     await this.databaseService.db.transaction(async (tx) => {
+      // Update current owner to admin role
+      await tx
+        .update(projectMembers)
+        .set({ role: 'admin' })
+        .where(
+          and(
+            eq(projectMembers.projectId, projectId),
+            eq(projectMembers.userId, currentOwner.userId),
+          ),
+        )
+        .execute();
+
+      // Update new owner to owner role
+      await tx
+        .update(projectMembers)
+        .set({ role: 'owner' })
+        .where(
+          and(
+            eq(projectMembers.projectId, projectId),
+            eq(projectMembers.userId, toUserId),
+          ),
+        )
+        .execute();
+
+      // Update project timestamp
       await tx
         .update(projects)
-        .set({
-          ownerId: toUserId,
-          updatedAt: new Date(),
-        })
+        .set({ updatedAt: new Date() })
         .where(eq(projects.id, projectId))
         .execute();
     });
@@ -203,6 +304,57 @@ export class AppService {
       success: true,
       message: `Added ${membersRecord.length} members to project`,
       data: membersRecord,
+    };
+  }
+
+  async validateProjectOwnership(
+    projectId: string,
+    userId: string,
+  ): Promise<
+    | {
+        success: true;
+        project?: Project;
+      }
+    | {
+        success: false;
+        code: 'PROJECT_NOT_FOUND' | 'FORBIDDEN';
+      }
+  > {
+    // Single query with JOIN to atomically check both project existence and ownership
+    const [result] = await this.databaseService.db
+      .select({
+        project: projects,
+        isOwner: projectMembers.role,
+      })
+      .from(projects)
+      .leftJoin(
+        projectMembers,
+        and(
+          eq(projectMembers.projectId, projects.id),
+          eq(projectMembers.userId, userId),
+          eq(projectMembers.role, 'owner'),
+        ),
+      )
+      .where(eq(projects.id, projectId))
+      .execute();
+
+    if (!result?.project) {
+      return {
+        success: false,
+        code: 'PROJECT_NOT_FOUND',
+      };
+    }
+
+    if (!result.isOwner) {
+      return {
+        success: false,
+        code: 'FORBIDDEN',
+      };
+    }
+
+    return {
+      success: true,
+      project: result.project,
     };
   }
 }

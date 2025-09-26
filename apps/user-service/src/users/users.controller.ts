@@ -5,7 +5,6 @@ import type { NewUser, User } from '@task-mgmt/database';
 import { CreateNewUserDto } from './dto/createNewUser.dto';
 import type { FindUserCriteria } from './dto/findUser.dto';
 import { QueueService } from '@task-mgmt/queue';
-import { EmailTemplates } from '../templates/email.templates';
 
 // Type for user data without passwordHash
 type SanitizedUser = Omit<User, 'passwordHash'>;
@@ -131,19 +130,15 @@ export class UsersController {
       await this.usersService.createVerificationToken(userId, user.email);
 
     try {
-      // Use the email template
-      const emailContent = EmailTemplates.verificationEmail(
-        this.getFrontEndUrl(),
-        emailVerificationTokenRecord.token,
-        user.name,
-      );
-
-      // Queue the email instead of sending directly
+      // Queue the email using template-based approach
       const result = await this.queueService.addEmailJob({
         to: user.email,
-        subject: emailContent.subject,
-        text: emailContent.text,
-        html: emailContent.html,
+        template: 'verification',
+        templateData: {
+          frontendUrl: this.getFrontEndUrl(),
+          token: emailVerificationTokenRecord.token,
+          userName: user.name,
+        },
         jobType: 'verification',
         userId: userId,
       });
@@ -213,19 +208,15 @@ export class UsersController {
       );
 
     try {
-      // Use the email template
-      const emailContent = EmailTemplates.passwordResetEmail(
-        this.getFrontEndUrl(),
-        passwordResetTokenRecord.token,
-        user.name,
-      );
-
-      // Queue the password reset email instead of sending directly
+      // Queue the email using template-based approach
       const result = await this.queueService.addEmailJob({
         to: user.email,
-        subject: emailContent.subject,
-        text: emailContent.text,
-        html: emailContent.html,
+        template: 'password-reset',
+        templateData: {
+          frontendUrl: this.getFrontEndUrl(),
+          token: passwordResetTokenRecord.token,
+          userName: user.name,
+        },
         jobType: 'password-reset',
         userId: user.id,
       });
@@ -295,18 +286,14 @@ export class UsersController {
     }
 
     try {
-      // Use the welcome email template
-      const emailContent = EmailTemplates.welcomeEmail(
-        this.getFrontEndUrl(),
-        user.name,
-      );
-
-      // Queue the welcome email instead of sending directly
+      // Queue the email using template-based approach
       const result = await this.queueService.addEmailJob({
         to: user.email,
-        subject: emailContent.subject,
-        text: emailContent.text,
-        html: emailContent.html,
+        template: 'welcome',
+        templateData: {
+          frontendUrl: this.getFrontEndUrl(),
+          userName: user.name,
+        },
         jobType: 'welcome',
         userId: user.id,
       });

@@ -18,7 +18,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { AuthGuard } from 'src/guards/auth.guards';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { CurrentUser } from 'src/decorators/user.decorator';
 import { type Project } from '@task-mgmt/database';
 import { TransferProjectDto } from './dto/transfer-project.dto';
@@ -72,8 +72,24 @@ export class ProjectsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all projects' })
-  findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
+  @ApiOperation({
+    summary: 'Get all projects',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+    example: 10,
+  })
+  findAll(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
     return firstValueFrom(
       this.projectService.send('project.getAll', { page, limit }),
     );
@@ -144,94 +160,6 @@ export class ProjectsController {
       this.projectService.send<Project>('project.transfer', {
         id,
         toUserId: transferProjectDto.toUserId,
-      }),
-    );
-  }
-
-  // GET    /api/projects/:id/members        - List project members
-  @Get(':id/members')
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Get all members of a project' })
-  async getProjectMembers(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
-    @CurrentUser() user: CurrentUserType,
-  ): Promise<{ userId: string; role: string }[]> {
-    await this.projectValidationService.validateProjectOwnership(id, user.id);
-
-    return firstValueFrom<{ userId: string; role: string }[]>(
-      this.projectService.send('member.getByProject', id),
-    );
-  }
-
-  // POST   /api/projects/:id/members/bulk-invite - Bulk invite users
-  // POST   /api/projects/:id/members/invite - Invite user(s) to project
-  @Post(':id/members')
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Add a member to a project' })
-  async addProjectMember(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
-    @Body() body: { userId: string; role: string },
-    @CurrentUser() user: CurrentUserType,
-  ): Promise<{ success: boolean; message: string }> {
-    await this.projectValidationService.validateProjectOwnership(id, user.id);
-
-    if (!body.userId || !body.role) {
-      throw new BadRequestException('userId and role are required');
-    }
-
-    return firstValueFrom<{ success: boolean; message: string }>(
-      this.projectService.send('member.create', {
-        projectId: id,
-        userId: body.userId,
-        role: body.role,
-      }),
-    );
-  }
-
-  // PUT    /api/projects/:id/members/:userId - Update member role
-  @Put(':id/members/:userId')
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Update a member role in a project' })
-  async updateProjectMemberRole(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
-    @Param('userId', new ParseUUIDPipe({ version: '4' })) userId: string,
-    @Body() body: { role: string },
-    @CurrentUser() user: CurrentUserType,
-  ): Promise<{ success: boolean; message: string }> {
-    await this.projectValidationService.validateProjectOwnership(id, user.id);
-
-    if (!body.role) {
-      throw new BadRequestException('role is required');
-    }
-
-    return firstValueFrom<{ success: boolean; message: string }>(
-      this.projectService.send('member.updateRole', {
-        projectId: id,
-        userId,
-        role: body.role,
-      }),
-    );
-  }
-
-  // DELETE /api/projects/:id/members/:userId - Remove member
-  @Delete(':id/members/:userId')
-  @UseGuards(AuthGuard)
-  @ApiBearerAuth('JWT-auth')
-  @ApiOperation({ summary: 'Remove a member from a project' })
-  async removeProjectMember(
-    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
-    @Param('userId', new ParseUUIDPipe({ version: '4' })) userId: string,
-    @CurrentUser() user: CurrentUserType,
-  ): Promise<{ success: boolean; message: string }> {
-    await this.projectValidationService.validateProjectOwnership(id, user.id);
-
-    return firstValueFrom<{ success: boolean; message: string }>(
-      this.projectService.send('member.delete', {
-        projectId: id,
-        userId,
       }),
     );
   }

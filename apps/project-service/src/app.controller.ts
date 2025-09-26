@@ -100,4 +100,9 @@ export class AppController {
   getMemberByProjectIdAndUserId(data: { projectId: string; userId: string }) {
     return this.appService.getProjectMemberByProjectIdAndUserId(data);
   }
+
+  @MessagePattern('member.getByProject')
+  getMemberByProject(data: { projectId: string }) {
+    return this.appService.getProjectMembersByProjectId(data.projectId);
+  }
 }

@@ -376,4 +376,27 @@ export class AppService {
 
     return member || null;
   }
+
+  async getProjectMembersByProjectId(
+    projectId: string,
+  ): Promise<(ProjectMember & { user: { email: string; name: string } })[]> {
+    const members = await this.databaseService.db
+      .select({
+        id: projectMembers.id,
+        projectId: projectMembers.projectId,
+        userId: projectMembers.userId,
+        role: projectMembers.role,
+        addedAt: projectMembers.addedAt,
+        user: {
+          email: users.email,
+          name: users.name,
+        },
+      })
+      .from(projectMembers)
+      .innerJoin(users, eq(projectMembers.userId, users.id))
+      .where(eq(projectMembers.projectId, projectId))
+      .execute();
+
+    return members;
+  }
 }

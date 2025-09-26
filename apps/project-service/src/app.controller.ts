@@ -95,4 +95,9 @@ export class AppController {
       };
     }
   }
+
+  @MessagePattern('member.getByProjectIdAndUserId')
+  getMemberByProjectIdAndUserId(data: { projectId: string; userId: string }) {
+    return this.appService.getProjectMemberByProjectIdAndUserId(data);
+  }
 }

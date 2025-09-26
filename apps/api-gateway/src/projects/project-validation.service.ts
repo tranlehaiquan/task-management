@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { type Project } from '@task-mgmt/database';
+import { ProjectMember, type Project } from '@task-mgmt/database';
 
 @Injectable()
 export class ProjectValidationService {
@@ -57,5 +57,30 @@ export class ProjectValidationService {
         'Project service is temporarily unavailable',
       );
     }
+  }
+
+  async validateProjectMemberRole(
+    projectId: string,
+    userId: string,
+    requiredRoles: string[],
+  ): Promise<ProjectMember> {
+    const member = await firstValueFrom<ProjectMember | null>(
+      this.projectService.send('member.getByProjectIdAndUserId', {
+        projectId,
+        userId,
+      }),
+    );
+
+    if (!member) {
+      throw new NotFoundException('You are not a member of this project');
+    }
+
+    if (!requiredRoles.includes(member.role)) {
+      throw new ForbiddenException(
+        'You do not have the required role to perform this action',
+      );
+    }
+
+    return member;
   }
 }

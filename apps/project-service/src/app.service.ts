@@ -12,6 +12,7 @@ import {
   type NewProject,
   NewProjectMember,
   Project,
+  ProjectMember,
 } from '@task-mgmt/database';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { eq, count, asc, and } from 'drizzle-orm';
@@ -356,5 +357,23 @@ export class AppService {
       success: true,
       project: result.project,
     };
+  }
+
+  async getProjectMemberByProjectIdAndUserId({
+    projectId,
+    userId,
+  }): Promise<ProjectMember | null> {
+    const [member] = await this.databaseService.db
+      .select()
+      .from(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, projectId),
+          eq(projectMembers.userId, userId),
+        ),
+      )
+      .execute();
+
+    return member || null;
   }
 }

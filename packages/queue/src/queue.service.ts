@@ -1,44 +1,19 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy, Inject } from '@nestjs/common';
 import { Queue } from 'bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
 import { EmailJob, QueueJobOptions, EmailJobResult } from './interfaces/email-job.interface';
-import { QUEUE_CONFIG } from './queue.module';
 
 @Injectable()
 export class QueueService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(QueueService.name);
-  private emailQueue: Queue;
-
-  constructor(@Inject(QUEUE_CONFIG) private readonly config: any) {}
+  constructor(@InjectQueue('email') private emailQueue: Queue, @InjectQueue('stressTest') private stressTestQueue: Queue) {}
 
   onModuleInit() {
-    // Use config first, then fall back to environment variables
-    const redisHost = this.config?.redis?.host || process.env.REDIS_HOST || 'localhost';
-    const redisPort = this.config?.redis?.port || parseInt(process.env.REDIS_PORT || '6379');
-
-    this.emailQueue = new Queue('email', {
-      connection: {
-        host: redisHost,
-        port: redisPort,
-      },
-      defaultJobOptions: {
-        removeOnComplete: 10,
-        removeOnFail: 5,
-        attempts: 3,
-        backoff: {
-          type: 'exponential',
-          delay: 1000,
-        },
-      },
-    });
-
     this.logger.log('Email queue initialized');
   }
 
   async onModuleDestroy() {
-    if (this.emailQueue) {
-      await this.emailQueue.close();
-      this.logger.log('Email queue closed');
-    }
+    this.logger.log('Email queue closed');
   }
 
   async addEmailJob(emailData: EmailJob, options?: QueueJobOptions): Promise<EmailJobResult> {
@@ -78,7 +53,16 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     return priorities[jobType] || 3;
   }
 
-  getEmailQueue(): Queue {
-    return this.emailQueue;
+  async addStressTestJob(stressTestData: any) {
+    try {
+      const job = await this.stressTestQueue.add('stress-test', stressTestData);
+      return job;
+    } catch (error) {
+      this.logger.error('Failed to queue stress test job:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error occurred',
+      };
+    }
   }
 }

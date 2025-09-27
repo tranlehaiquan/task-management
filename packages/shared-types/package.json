@@ -2,11 +2,7 @@
   "name": "@task-mgmt/shared-types",
   "version": "0.0.0",
   "private": true,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
     "lint": "eslint src --ext .ts",
     "test": "jest"
   },
@@ -20,5 +16,8 @@
     "prettier": "^3.6.2",
     "typescript": "^5.9.2",
     "typescript-eslint": "^8.44.1"
+  },
+  "exports": {
+    ".": "./src/index.ts"
   }
 }

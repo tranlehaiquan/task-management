@@ -27,9 +27,6 @@ export class QueueModule {
         BullModule.registerQueue({
           name: 'email',
         }),
-        BullModule.registerQueue({
-          name: 'stressTest',
-        }),
       ],
       providers: [
         QueueService, 

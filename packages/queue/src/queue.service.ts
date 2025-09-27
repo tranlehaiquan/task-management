@@ -6,7 +6,7 @@ import { EmailJob, QueueJobOptions, EmailJobResult } from './interfaces/email-jo
 @Injectable()
 export class QueueService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(QueueService.name);
-  constructor(@InjectQueue('email') private emailQueue: Queue, @InjectQueue('stressTest') private stressTestQueue: Queue) {}
+  constructor(@InjectQueue('email') private emailQueue: Queue) {}
 
   onModuleInit() {
     this.logger.log('Email queue initialized');
@@ -53,16 +53,4 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     return priorities[jobType] || 3;
   }
 
-  async addStressTestJob(stressTestData: any) {
-    try {
-      const job = await this.stressTestQueue.add('stress-test', stressTestData);
-      return job;
-    } catch (error) {
-      this.logger.error('Failed to queue stress test job:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-      };
-    }
-  }
 }

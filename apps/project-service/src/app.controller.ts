@@ -70,10 +70,7 @@ export class AppController {
 
   @MessagePattern('member.create')
   createMember(data: CreateMemberDto) {
-    return this.appService.createMembers({
-      projectId: data.projectId,
-      members: [{ userId: data.userId, role: data.role }],
-    });
+    return this.appService.createMember(data);
   }
 
   @MessagePattern('project.validateOwnership')

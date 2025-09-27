@@ -17,7 +17,7 @@ import {
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { eq, count, asc, and } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
-import { CreateMembersDto } from './dto/create-member.dto';
+import { CreateMemberDto, CreateMembersDto } from './dto/create-member.dto';
 
 @Injectable()
 export class AppService {
@@ -274,6 +274,44 @@ export class AppService {
     };
   }
 
+  async createMember(data: CreateMemberDto) {
+    const { projectId, userId, role } = data;
+
+    const projectRecord = await this.databaseService.db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectId));
+
+    if (!projectRecord) {
+      return {
+        success: false,
+        message: `Can't front project`,
+        code: 'PROJECT_NOT_FOUNT',
+      };
+    }
+
+    const [memberRecord] = await this.databaseService.db
+      .insert(projectMembers)
+      .values({ projectId, userId, role })
+      .onConflictDoNothing()
+      .returning()
+      .execute();
+
+    if (!memberRecord) {
+      return {
+        success: false,
+        message: `Member already exists`,
+        code: 'MEMBER_ALREADY_EXISTS',
+      };
+    }
+
+    return {
+      success: true,
+      message: `Added member to project`,
+      data: memberRecord,
+    };
+  }
+
   async createMembers(data: CreateMembersDto) {
     const { projectId, members } = data;
 
@@ -295,17 +333,34 @@ export class AppService {
       ...i,
     }));
 
-    const membersRecord = await this.databaseService.db
-      .insert(projectMembers)
-      .values(newMembers)
-      .returning()
-      .execute();
+    try {
+      const membersRecord = await this.databaseService.db
+        .insert(projectMembers)
+        .values(newMembers)
+        .returning()
+        .execute();
 
-    return {
-      success: true,
-      message: `Added ${membersRecord.length} members to project`,
-      data: membersRecord,
-    };
+      return {
+        success: true,
+        message: `Added ${membersRecord.length} members to project`,
+        data: membersRecord,
+      };
+    } catch (error) {
+      // Handle unique constraint violation
+      if (
+        error.code === '23505' &&
+        error.constraint === 'unique_project_user'
+      ) {
+        return {
+          success: false,
+          message: 'One or more users are already members of this project',
+          code: 'DUPLICATE_MEMBER',
+        };
+      }
+
+      // Re-throw other errors
+      throw error;
+    }
   }
 
   async validateProjectOwnership(

@@ -17,6 +17,7 @@ import { CurrentUser } from 'src/decorators/user.decorator';
 import type { CurrentUser as CurrentUserType } from '@task-mgmt/shared-types';
 import { AuthGuard } from 'src/guards/auth.guards';
 import { ProjectValidationService } from './project-validation.service';
+import { AddProjectMemberDto } from './dto/project-members.dto';
 
 @ApiTags('Project Members')
 @Controller('projects/:projectId/members')
@@ -44,7 +45,7 @@ export class ProjectMembersController {
   @ApiOperation({ summary: 'Add a member to a project' })
   async addProjectMember(
     @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
-    @Body() body: { userId: string; role: string },
+    @Body() body: AddProjectMemberDto,
     @CurrentUser() user: CurrentUserType,
   ): Promise<{ success: boolean; message: string }> {
     await this.projectValidationService.validateProjectMemberRole(

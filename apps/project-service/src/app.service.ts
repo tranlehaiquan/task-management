@@ -12,11 +12,12 @@ import {
   type NewProject,
   NewProjectMember,
   Project,
+  ProjectMember,
 } from '@task-mgmt/database';
 import { UpdateProjectDto } from './dto/update-project.dto';
-import { eq, count, asc, and } from 'drizzle-orm';
+import { eq, count, asc, and, ne } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
-import { CreateMembersDto } from './dto/create-member.dto';
+import { CreateMemberDto } from './dto/create-member.dto';
 
 @Injectable()
 export class AppService {
@@ -273,37 +274,42 @@ export class AppService {
     };
   }
 
-  async createMembers(data: CreateMembersDto) {
-    const { projectId, members } = data;
+  async createMember(data: CreateMemberDto) {
+    const { projectId, userId, role } = data;
 
-    const projectRecord = await this.databaseService.db
+    const [projectRecord] = await this.databaseService.db
       .select()
       .from(projects)
-      .where(eq(projects.id, projectId));
+      .where(eq(projects.id, projectId))
+      .execute();
 
     if (!projectRecord) {
       return {
         success: false,
-        message: `Can't front project`,
-        code: 'PROJECT_NOT_FOUNT',
+        message: `Can't find project`,
+        code: 'PROJECT_NOT_FOUND',
       };
     }
 
-    const newMembers: NewProjectMember[] = members.map((i) => ({
-      projectId,
-      ...i,
-    }));
-
-    const membersRecord = await this.databaseService.db
+    const [memberRecord] = await this.databaseService.db
       .insert(projectMembers)
-      .values(newMembers)
+      .values({ projectId, userId, role })
+      .onConflictDoNothing()
       .returning()
       .execute();
 
+    if (!memberRecord) {
+      return {
+        success: false,
+        message: `Member already exists`,
+        code: 'MEMBER_ALREADY_EXISTS',
+      };
+    }
+
     return {
       success: true,
-      message: `Added ${membersRecord.length} members to project`,
-      data: membersRecord,
+      message: `Added member to project`,
+      data: memberRecord,
     };
   }
 
@@ -355,6 +361,77 @@ export class AppService {
     return {
       success: true,
       project: result.project,
+    };
+  }
+
+  async getProjectMemberByProjectIdAndUserId(params: {
+    projectId: string;
+    userId: string;
+  }): Promise<ProjectMember | null> {
+    const { projectId, userId } = params;
+    const [member] = await this.databaseService.db
+      .select()
+      .from(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, projectId),
+          eq(projectMembers.userId, userId),
+        ),
+      )
+      .execute();
+
+    return member || null;
+  }
+
+  async getProjectMembersByProjectId(
+    projectId: string,
+  ): Promise<(ProjectMember & { user: { email: string; name: string } })[]> {
+    const members = await this.databaseService.db
+      .select({
+        id: projectMembers.id,
+        projectId: projectMembers.projectId,
+        userId: projectMembers.userId,
+        role: projectMembers.role,
+        addedAt: projectMembers.addedAt,
+        user: {
+          email: users.email,
+          name: users.name,
+        },
+      })
+      .from(projectMembers)
+      .innerJoin(users, eq(projectMembers.userId, users.id))
+      .where(eq(projectMembers.projectId, projectId))
+      .execute();
+
+    return members;
+  }
+
+  async deleteMember(params: { projectId: string; memberId: string }) {
+    const { projectId, memberId } = params;
+    const [member] = await this.databaseService.db
+      .delete(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, projectId),
+          eq(projectMembers.id, memberId),
+          // and the role must not be owner
+          ne(projectMembers.role, 'owner'),
+        ),
+      )
+      .returning()
+      .execute();
+
+    if (!member) {
+      return {
+        success: false,
+        message: `Member not found`,
+        code: 'MEMBER_NOT_FOUND',
+      };
+    }
+
+    return {
+      success: true,
+      message: `Member deleted`,
     };
   }
 }

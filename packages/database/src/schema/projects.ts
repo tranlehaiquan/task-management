@@ -5,6 +5,7 @@ import {
   text,
   timestamp,
   pgEnum,
+  unique,
 } from 'drizzle-orm/pg-core';
 import { users } from './users';
 
@@ -37,7 +38,10 @@ export const projectMembers = pgTable('project_members', {
     .notNull(),
   role: projectRoles('role').default('member').notNull(),
   addedAt: timestamp('added_at').defaultNow(),
-});
+}, (table) => ({
+  // Unique constraint to ensure one user can only be added to a project once
+  uniqueProjectUser: unique('unique_project_user').on(table.projectId, table.userId),
+}));
 
 export type ProjectMember = typeof projectMembers.$inferSelect;
 export type NewProjectMember = typeof projectMembers.$inferInsert;

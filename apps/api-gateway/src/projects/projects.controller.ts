@@ -11,13 +11,14 @@ import {
   BadRequestException,
   Query,
   ParseUUIDPipe,
+  Put,
 } from '@nestjs/common';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { AuthGuard } from 'src/guards/auth.guards';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
-import { ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { CurrentUser } from 'src/decorators/user.decorator';
 import { type Project } from '@task-mgmt/database';
 import { TransferProjectDto } from './dto/transfer-project.dto';
@@ -71,8 +72,24 @@ export class ProjectsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all projects' })
-  findAll(@Query('page') page?: number, @Query('limit') limit?: number) {
+  @ApiOperation({
+    summary: 'Get all projects',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Page number for pagination',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of items per page',
+    example: 10,
+  })
+  findAll(@Query('page') page: number = 1, @Query('limit') limit: number = 10) {
     return firstValueFrom(
       this.projectService.send('project.getAll', { page, limit }),
     );
@@ -146,10 +163,4 @@ export class ProjectsController {
       }),
     );
   }
-
-  // GET    /api/projects/:id/members        - List project members
-  // POST   /api/projects/:id/members/invite - Invite user(s) to project
-  // PUT    /api/projects/:id/members/:userId - Update member role
-  // DELETE /api/projects/:id/members/:userId - Remove member
-  // POST   /api/projects/:id/members/bulk-invite - Bulk invite users
 }

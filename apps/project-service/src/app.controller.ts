@@ -102,4 +102,9 @@ export class AppController {
   getMemberByProject(data: { projectId: string }) {
     return this.appService.getProjectMembersByProjectId(data.projectId);
   }
+
+  @MessagePattern('member.delete')
+  deleteMember(data: { projectId: string; memberId: string }) {
+    return this.appService.deleteMember(data);
+  }
 }

@@ -454,4 +454,33 @@ export class AppService {
 
     return members;
   }
+
+  async deleteMember({
+    projectId,
+    memberId,
+  }) {
+    const [member] = await this.databaseService.db
+      .delete(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, projectId),
+          eq(projectMembers.id, memberId),
+        ),
+      )
+      .returning()
+      .execute();
+
+    if (!member) {
+      return {
+        success: false,
+        message: `Member not found`,
+        code: 'MEMBER_NOT_FOUND',
+      };
+    }
+
+    return {
+      success: true,
+      message: `Member deleted`,
+    };
+  }
 }

@@ -15,7 +15,7 @@ import {
   ProjectMember,
 } from '@task-mgmt/database';
 import { UpdateProjectDto } from './dto/update-project.dto';
-import { eq, count, asc, and } from 'drizzle-orm';
+import { eq, count, asc, and, ne } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import { CreateMemberDto, CreateMembersDto } from './dto/create-member.dto';
 
@@ -465,6 +465,8 @@ export class AppService {
         and(
           eq(projectMembers.projectId, projectId),
           eq(projectMembers.id, memberId),
+          // and the role must not be owner
+          ne(projectMembers.role, 'owner'),
         ),
       )
       .returning()

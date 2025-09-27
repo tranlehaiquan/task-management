@@ -17,7 +17,7 @@ import {
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { eq, count, asc, and, ne } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
-import { CreateMemberDto, CreateMembersDto } from './dto/create-member.dto';
+import { CreateMemberDto } from './dto/create-member.dto';
 
 @Injectable()
 export class AppService {
@@ -277,16 +277,17 @@ export class AppService {
   async createMember(data: CreateMemberDto) {
     const { projectId, userId, role } = data;
 
-    const projectRecord = await this.databaseService.db
+    const [projectRecord] = await this.databaseService.db
       .select()
       .from(projects)
-      .where(eq(projects.id, projectId));
+      .where(eq(projects.id, projectId))
+      .execute();
 
     if (!projectRecord) {
       return {
         success: false,
-        message: `Can't front project`,
-        code: 'PROJECT_NOT_FOUNT',
+        message: `Can't find project`,
+        code: 'PROJECT_NOT_FOUND',
       };
     }
 
@@ -363,10 +364,11 @@ export class AppService {
     };
   }
 
-  async getProjectMemberByProjectIdAndUserId({
-    projectId,
-    userId,
+  async getProjectMemberByProjectIdAndUserId(params: {
+    projectId: string;
+    userId: string;
   }): Promise<ProjectMember | null> {
+    const { projectId, userId } = params;
     const [member] = await this.databaseService.db
       .select()
       .from(projectMembers)
@@ -404,7 +406,8 @@ export class AppService {
     return members;
   }
 
-  async deleteMember({ projectId, memberId }) {
+  async deleteMember(params: { projectId: string; memberId: string }) {
+    const { projectId, memberId } = params;
     const [member] = await this.databaseService.db
       .delete(projectMembers)
       .where(

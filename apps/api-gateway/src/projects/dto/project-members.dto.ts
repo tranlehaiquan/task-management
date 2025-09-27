@@ -19,7 +19,7 @@ class AddProjectMemberDto {
   })
   @IsOptional()
   @IsEnum(rolesAddable)
-  role?: Omit<ProjectRole, 'owner'>;
+  role?: Exclude<ProjectRole, 'owner'>;
 }
 
 class UpdateProjectMemberRoleDto {
@@ -28,7 +28,7 @@ class UpdateProjectMemberRoleDto {
     example: 'member',
   })
   @IsEnum(rolesAddable)
-  role?: Omit<ProjectRole, 'owner'>;
+  role?: Exclude<ProjectRole, 'owner'>;
 }
 
 export { AddProjectMemberDto, UpdateProjectMemberRoleDto };

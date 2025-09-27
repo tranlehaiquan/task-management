@@ -31,10 +31,19 @@ export class ProjectMembersController {
   ) {}
 
   @Get()
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get all members of a project' })
   async getProjectMembers(
     @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
+    @CurrentUser() user: CurrentUserType,
   ): Promise<{ userId: string; role: string }[]> {
+
+    await this.projectValidationService.validateProjectMemberRole(
+      projectId,
+      user.id,
+    );
+
     return firstValueFrom<{ userId: string; role: string }[]>(
       this.projectService.send('member.getByProject', {
         projectId,

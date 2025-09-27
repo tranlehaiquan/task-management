@@ -55,7 +55,7 @@ export class ProjectValidationService {
   async validateProjectMemberRole(
     projectId: string,
     userId: string,
-    requiredRoles: ProjectRole[],
+    requiredRoles?: ProjectRole[],
   ): Promise<ProjectMember> {
     const member = await firstValueFrom<ProjectMember | null>(
       this.projectService.send('member.getByProjectIdAndUserId', {
@@ -68,7 +68,7 @@ export class ProjectValidationService {
       throw new NotFoundException('You are not a member of this project');
     }
 
-    if (!requiredRoles.includes(member.role)) {
+    if (requiredRoles && !requiredRoles.includes(member.role)) {
       throw new ForbiddenException(
         'You do not have the required role to perform this action',
       );

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { projectRoles, type ProjectRole } from '@task-mgmt/database';
-import { IsEnum, IsNotEmpty, IsOptional, IsUUID } from "class-validator";
+import { IsEnum, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
 
 const rolesAddable = projectRoles.enumValues.filter((role) => role !== 'owner');
 

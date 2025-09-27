@@ -312,57 +312,6 @@ export class AppService {
     };
   }
 
-  async createMembers(data: CreateMembersDto) {
-    const { projectId, members } = data;
-
-    const projectRecord = await this.databaseService.db
-      .select()
-      .from(projects)
-      .where(eq(projects.id, projectId));
-
-    if (!projectRecord) {
-      return {
-        success: false,
-        message: `Can't front project`,
-        code: 'PROJECT_NOT_FOUNT',
-      };
-    }
-
-    const newMembers: NewProjectMember[] = members.map((i) => ({
-      projectId,
-      ...i,
-    }));
-
-    try {
-      const membersRecord = await this.databaseService.db
-        .insert(projectMembers)
-        .values(newMembers)
-        .returning()
-        .execute();
-
-      return {
-        success: true,
-        message: `Added ${membersRecord.length} members to project`,
-        data: membersRecord,
-      };
-    } catch (error) {
-      // Handle unique constraint violation
-      if (
-        error.code === '23505' &&
-        error.constraint === 'unique_project_user'
-      ) {
-        return {
-          success: false,
-          message: 'One or more users are already members of this project',
-          code: 'DUPLICATE_MEMBER',
-        };
-      }
-
-      // Re-throw other errors
-      throw error;
-    }
-  }
-
   async validateProjectOwnership(
     projectId: string,
     userId: string,
@@ -455,10 +404,7 @@ export class AppService {
     return members;
   }
 
-  async deleteMember({
-    projectId,
-    memberId,
-  }) {
+  async deleteMember({ projectId, memberId }) {
     const [member] = await this.databaseService.db
       .delete(projectMembers)
       .where(

@@ -17,7 +17,10 @@ import { CurrentUser } from 'src/decorators/user.decorator';
 import type { CurrentUser as CurrentUserType } from '@task-mgmt/shared-types';
 import { AuthGuard } from 'src/guards/auth.guards';
 import { ProjectValidationService } from './project-validation.service';
-import { AddProjectMemberDto, UpdateProjectMemberRoleDto } from './dto/project-members.dto';
+import {
+  AddProjectMemberDto,
+  UpdateProjectMemberRoleDto,
+} from './dto/project-members.dto';
 
 @ApiTags('Project Members')
 @Controller('projects/:projectId/members')

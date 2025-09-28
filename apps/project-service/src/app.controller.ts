@@ -6,6 +6,7 @@ import { TransferProjectDto } from './dto/transfer-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { GetAllProjectsDto } from './dto/get-all-projects.dto';
 import { CreateMemberDto } from './dto/create-member.dto';
+import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 
 @Controller()
 export class AppController {
@@ -106,5 +107,10 @@ export class AppController {
   @MessagePattern('member.delete')
   deleteMember(data: { projectId: string; memberId: string }) {
     return this.appService.deleteMember(data);
+  }
+
+  @MessagePattern('member.updateRole')
+  updateMemberRole(@Payload() data: UpdateMemberRoleDto) {
+    return this.appService.updateMemberRole(data);
   }
 }

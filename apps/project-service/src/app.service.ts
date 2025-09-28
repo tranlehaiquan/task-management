@@ -18,6 +18,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { eq, count, asc, and, ne } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import { CreateMemberDto } from './dto/create-member.dto';
+import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 
 @Injectable()
 export class AppService {
@@ -445,5 +446,58 @@ export class AppService {
       success: true,
       message: `Member deleted`,
     };
+  }
+
+  async updateMemberRole(data: UpdateMemberRoleDto): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    const { projectId, memberId, role } = data;
+
+    try {
+      // Update the member's role, but prevent changing owner role
+      const [updatedMember] = await this.databaseService.db
+        .update(projectMembers)
+        .set({ role })
+        .where(
+          and(
+            eq(projectMembers.projectId, projectId),
+            eq(projectMembers.id, memberId),
+            // Prevent changing owner role to something else
+            ne(projectMembers.role, 'owner'),
+          ),
+        )
+        .returning()
+        .execute();
+
+      if (!updatedMember) {
+        return {
+          success: false,
+          message: `Member not found or cannot update owner role`,
+        };
+      }
+
+      return {
+        success: true,
+        message: `Member role updated to ${role}`,
+      };
+    } catch (error: unknown) {
+      // Handle specific database constraint violations
+      if (!isPostgresError(error)) {
+        throw error;
+      }
+
+      if (error.code === PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
+        if (error.constraint?.includes('project_id')) {
+          return {
+            success: false,
+            message: `Can't find project`,
+          };
+        }
+      }
+
+      // Re-throw any unhandled database errors
+      throw error;
+    }
   }
 }

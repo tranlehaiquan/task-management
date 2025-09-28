@@ -6,6 +6,7 @@ import { TransferProjectDto } from './dto/transfer-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { GetAllProjectsDto } from './dto/get-all-projects.dto';
 import { CreateMemberDto } from './dto/create-member.dto';
+import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 
 @Controller()
 export class AppController {
@@ -70,10 +71,7 @@ export class AppController {
 
   @MessagePattern('member.create')
   createMember(data: CreateMemberDto) {
-    return this.appService.createMembers({
-      projectId: data.projectId,
-      members: [{ userId: data.userId, role: data.role }],
-    });
+    return this.appService.createMember(data);
   }
 
   @MessagePattern('project.validateOwnership')
@@ -94,5 +92,25 @@ export class AppController {
         code: 'INTERNAL_ERROR',
       };
     }
+  }
+
+  @MessagePattern('member.getByProjectIdAndUserId')
+  getMemberByProjectIdAndUserId(data: { projectId: string; userId: string }) {
+    return this.appService.getProjectMemberByProjectIdAndUserId(data);
+  }
+
+  @MessagePattern('member.getByProject')
+  getMemberByProject(data: { projectId: string }) {
+    return this.appService.getProjectMembersByProjectId(data.projectId);
+  }
+
+  @MessagePattern('member.delete')
+  deleteMember(data: { projectId: string; memberId: string }) {
+    return this.appService.deleteMember(data);
+  }
+
+  @MessagePattern('member.updateRole')
+  updateMemberRole(@Payload() data: UpdateMemberRoleDto) {
+    return this.appService.updateMemberRole(data);
   }
 }

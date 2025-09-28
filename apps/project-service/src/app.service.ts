@@ -9,14 +9,16 @@ import {
   projects,
   users,
   projectMembers,
-  type NewProject,
-  NewProjectMember,
   Project,
+  ProjectMember,
+  PG_ERROR_CODES,
+  isPostgresError,
 } from '@task-mgmt/database';
 import { UpdateProjectDto } from './dto/update-project.dto';
-import { eq, count, asc, and } from 'drizzle-orm';
+import { eq, count, asc, and, ne } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
-import { CreateMembersDto } from './dto/create-member.dto';
+import { CreateMemberDto } from './dto/create-member.dto';
+import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 
 @Injectable()
 export class AppService {
@@ -273,38 +275,55 @@ export class AppService {
     };
   }
 
-  async createMembers(data: CreateMembersDto) {
-    const { projectId, members } = data;
+  async createMember(data: CreateMemberDto) {
+    const { projectId, userId, role } = data;
 
-    const projectRecord = await this.databaseService.db
-      .select()
-      .from(projects)
-      .where(eq(projects.id, projectId));
+    try {
+      // Single query: let database constraints handle validation
+      const [memberRecord] = await this.databaseService.db
+        .insert(projectMembers)
+        .values({ projectId, userId, role })
+        .returning()
+        .execute();
 
-    if (!projectRecord) {
       return {
-        success: false,
-        message: `Can't front project`,
-        code: 'PROJECT_NOT_FOUNT',
+        success: true,
+        message: `Added member to project`,
+        data: memberRecord,
       };
+    } catch (error) {
+      // Handle specific database constraint violations
+      if (!isPostgresError(error)) {
+        throw error;
+      }
+
+      if (error.code === PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
+        // Foreign key violation
+        if (error.constraint?.includes('project_id')) {
+          return {
+            success: false,
+            message: `Can't find project`,
+            code: 'PROJECT_NOT_FOUND',
+          };
+        }
+        if (error.constraint?.includes('user_id')) {
+          return {
+            success: false,
+            message: `Can't find user`,
+            code: 'USER_NOT_FOUND',
+          };
+        }
+      }
+
+      if (error.code === PG_ERROR_CODES.UNIQUE_VIOLATION) {
+        // Unique constraint violation
+        return {
+          success: false,
+          message: `Member already exists`,
+          code: 'MEMBER_ALREADY_EXISTS',
+        };
+      }
     }
-
-    const newMembers: NewProjectMember[] = members.map((i) => ({
-      projectId,
-      ...i,
-    }));
-
-    const membersRecord = await this.databaseService.db
-      .insert(projectMembers)
-      .values(newMembers)
-      .returning()
-      .execute();
-
-    return {
-      success: true,
-      message: `Added ${membersRecord.length} members to project`,
-      data: membersRecord,
-    };
   }
 
   async validateProjectOwnership(
@@ -356,5 +375,129 @@ export class AppService {
       success: true,
       project: result.project,
     };
+  }
+
+  async getProjectMemberByProjectIdAndUserId(params: {
+    projectId: string;
+    userId: string;
+  }): Promise<ProjectMember | null> {
+    const { projectId, userId } = params;
+    const [member] = await this.databaseService.db
+      .select()
+      .from(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, projectId),
+          eq(projectMembers.userId, userId),
+        ),
+      )
+      .execute();
+
+    return member || null;
+  }
+
+  async getProjectMembersByProjectId(
+    projectId: string,
+  ): Promise<(ProjectMember & { user: { email: string; name: string } })[]> {
+    const members = await this.databaseService.db
+      .select({
+        id: projectMembers.id,
+        projectId: projectMembers.projectId,
+        userId: projectMembers.userId,
+        role: projectMembers.role,
+        addedAt: projectMembers.addedAt,
+        user: {
+          email: users.email,
+          name: users.name,
+        },
+      })
+      .from(projectMembers)
+      .innerJoin(users, eq(projectMembers.userId, users.id))
+      .where(eq(projectMembers.projectId, projectId))
+      .execute();
+
+    return members;
+  }
+
+  async deleteMember(params: { projectId: string; memberId: string }) {
+    const { projectId, memberId } = params;
+    const [member] = await this.databaseService.db
+      .delete(projectMembers)
+      .where(
+        and(
+          eq(projectMembers.projectId, projectId),
+          eq(projectMembers.id, memberId),
+          // and the role must not be owner
+          ne(projectMembers.role, 'owner'),
+        ),
+      )
+      .returning()
+      .execute();
+
+    if (!member) {
+      return {
+        success: false,
+        message: `Member not found`,
+        code: 'MEMBER_NOT_FOUND',
+      };
+    }
+
+    return {
+      success: true,
+      message: `Member deleted`,
+    };
+  }
+
+  async updateMemberRole(data: UpdateMemberRoleDto): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    const { projectId, memberId, role } = data;
+
+    try {
+      // Update the member's role, but prevent changing owner role
+      const [updatedMember] = await this.databaseService.db
+        .update(projectMembers)
+        .set({ role })
+        .where(
+          and(
+            eq(projectMembers.projectId, projectId),
+            eq(projectMembers.id, memberId),
+            // Prevent changing owner role to something else
+            ne(projectMembers.role, 'owner'),
+          ),
+        )
+        .returning()
+        .execute();
+
+      if (!updatedMember) {
+        return {
+          success: false,
+          message: `Member not found or cannot update owner role`,
+        };
+      }
+
+      return {
+        success: true,
+        message: `Member role updated to ${role}`,
+      };
+    } catch (error: unknown) {
+      // Handle specific database constraint violations
+      if (!isPostgresError(error)) {
+        throw error;
+      }
+
+      if (error.code === PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
+        if (error.constraint?.includes('project_id')) {
+          return {
+            success: false,
+            message: `Can't find project`,
+          };
+        }
+      }
+
+      // Re-throw any unhandled database errors
+      throw error;
+    }
   }
 }

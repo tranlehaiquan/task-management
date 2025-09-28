@@ -9,10 +9,9 @@ import {
   projects,
   users,
   projectMembers,
-  type NewProject,
-  NewProjectMember,
   Project,
   ProjectMember,
+  PG_ERROR_CODES,
 } from '@task-mgmt/database';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { eq, count, asc, and, ne } from 'drizzle-orm';
@@ -277,40 +276,49 @@ export class AppService {
   async createMember(data: CreateMemberDto) {
     const { projectId, userId, role } = data;
 
-    const [projectRecord] = await this.databaseService.db
-      .select()
-      .from(projects)
-      .where(eq(projects.id, projectId))
-      .execute();
+    try {
+      // Single query: let database constraints handle validation
+      const [memberRecord] = await this.databaseService.db
+        .insert(projectMembers)
+        .values({ projectId, userId, role })
+        .returning()
+        .execute();
 
-    if (!projectRecord) {
       return {
-        success: false,
-        message: `Can't find project`,
-        code: 'PROJECT_NOT_FOUND',
+        success: true,
+        message: `Added member to project`,
+        data: memberRecord,
       };
+    } catch (error) {
+      // Handle specific database constraint violations
+      if (error.code === PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) { // Foreign key violation
+        if (error.constraint?.includes('project_id')) {
+          return {
+            success: false,
+            message: `Can't find project`,
+            code: 'PROJECT_NOT_FOUND',
+          };
+        }
+        if (error.constraint?.includes('user_id')) {
+          return {
+            success: false,
+            message: `Can't find user`,
+            code: 'USER_NOT_FOUND',
+          };
+        }
+      }
+      
+      if (error.code === PG_ERROR_CODES.UNIQUE_VIOLATION) { // Unique constraint violation
+        return {
+          success: false,
+          message: `Member already exists`,
+          code: 'MEMBER_ALREADY_EXISTS',
+        };
+      }
+
+      // Re-throw unexpected errors
+      throw error;
     }
-
-    const [memberRecord] = await this.databaseService.db
-      .insert(projectMembers)
-      .values({ projectId, userId, role })
-      .onConflictDoNothing()
-      .returning()
-      .execute();
-
-    if (!memberRecord) {
-      return {
-        success: false,
-        message: `Member already exists`,
-        code: 'MEMBER_ALREADY_EXISTS',
-      };
-    }
-
-    return {
-      success: true,
-      message: `Added member to project`,
-      data: memberRecord,
-    };
   }
 
   async validateProjectOwnership(

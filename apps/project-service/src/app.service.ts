@@ -12,6 +12,7 @@ import {
   Project,
   ProjectMember,
   PG_ERROR_CODES,
+  isPostgresError,
 } from '@task-mgmt/database';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { eq, count, asc, and, ne } from 'drizzle-orm';
@@ -291,7 +292,12 @@ export class AppService {
       };
     } catch (error) {
       // Handle specific database constraint violations
-      if (error.code === PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) { // Foreign key violation
+      if (!isPostgresError(error)) {
+        throw error;
+      }
+
+      if (error.code === PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
+        // Foreign key violation
         if (error.constraint?.includes('project_id')) {
           return {
             success: false,
@@ -307,17 +313,15 @@ export class AppService {
           };
         }
       }
-      
-      if (error.code === PG_ERROR_CODES.UNIQUE_VIOLATION) { // Unique constraint violation
+
+      if (error.code === PG_ERROR_CODES.UNIQUE_VIOLATION) {
+        // Unique constraint violation
         return {
           success: false,
           message: `Member already exists`,
           code: 'MEMBER_ALREADY_EXISTS',
         };
       }
-
-      // Re-throw unexpected errors
-      throw error;
     }
   }
 

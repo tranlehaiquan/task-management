@@ -38,7 +38,6 @@ export class ProjectMembersController {
     @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
     @CurrentUser() user: CurrentUserType,
   ): Promise<{ userId: string; role: string }[]> {
-
     await this.projectValidationService.validateProjectMemberRole(
       projectId,
       user.id,

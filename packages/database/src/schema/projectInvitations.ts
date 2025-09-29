@@ -17,7 +17,7 @@ export const projectInvitations = pgTable(
     
     // Core invitation fields
     email: varchar('email', { length: 255 }).notNull(),
-    token: varchar('token', { length: 255 }).notNull().unique(),
+    token: varchar('token', { length: 255 }).notNull(),
     
     // Project context (always required)
     projectId: uuid('project_id')

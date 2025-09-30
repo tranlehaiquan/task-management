@@ -15,6 +15,9 @@ import {
   PG_ERROR_CODES,
   isPostgresError,
   User,
+  NewProjectInvitation,
+  ProjectRole,
+  projectInvitations,
 } from '@task-mgmt/database';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { eq, count, asc, and, ne } from 'drizzle-orm';
@@ -24,6 +27,7 @@ import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
 import { QueueService } from '@task-mgmt/queue';
+import { randomString } from '@task-mgmt/shared-utils';
 
 @Injectable()
 export class AppService {
@@ -512,7 +516,7 @@ export class AppService {
 
   async sendInvitation(data: {
     projectId: string;
-    role: string;
+    role: ProjectRole;
     email: string;
     invitedBy: string;
   }) {
@@ -529,27 +533,53 @@ export class AppService {
       throw new NotFoundException(`Project with ID ${projectId} not found`);
     }
 
-    // find user by email
-    const [user] = await this.databaseService.db
-      .select()
-      .from(users)
-      .where(eq(users.email, email))
+    // check if project member exists by projectId and email
+    const [existingMember] = await this.databaseService.db
+      .select({ id: projectMembers.id })
+      .from(projectMembers)
+      .innerJoin(users, eq(users.id, projectMembers.userId))
+      .where(
+        and(eq(projectMembers.projectId, projectId), eq(users.email, email)),
+      )
       .execute();
 
-    const isNewUser = !user;
-
-    if (isNewUser) {
-      const password = '123456'; // TODO: remove this
-      
-      // create new user
-      const result = await firstValueFrom<Omit<User, 'passwordHash'>>(
-        this.userService.send('user.createNewUser', {
-          email,
-          name: email,
-          password,
-          isEmailVerified: true,
-        }),
-      );
+    if (existingMember) {
+      return {
+        success: false,
+        message: 'Member already exists',
+        code: 'MEMBER_ALREADY_EXISTS',
+      } as const;
     }
+
+    const token = randomString(32);
+    // expires in 5 days
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 5);
+
+    const [projectInvitation] = await this.databaseService.db
+      .insert(projectInvitations)
+      .values({ projectId, email, token, expiresAt, invitedBy, role })
+      .returning()
+      .execute();
+
+    // send email
+    await this.queueService.addEmailJob({
+      to: email,
+      subject: 'Invitation to join project',
+      text: `You are invited to join project ${project.name} with role ${role}`,
+      template: 'project-invite',
+      templateData: {
+        frontendUrl: process.env.FRONTEND_URL,
+        projectName: project.name,
+        projectRole: role,
+        token,
+      },
+      jobType: 'project-invite',
+    });
+
+    return {
+      success: true,
+      message: 'Invitation sent',
+      data: projectInvitation,
+    };
   }
 }

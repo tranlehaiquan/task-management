@@ -317,18 +317,20 @@ export class UsersController {
 
   @MessagePattern('user.createNewUserByInvite')
   async createNewUserByInvite(data) {
+    const password = 'Abc@123qwe';
     const user = await this.usersService.createUser({
       ...data,
+      password,
       isEmailVerified: true,
     });
 
-    const result = this.queueService.addEmailJob({
+    await this.queueService.addEmailJob({
       to: user.email,
-      jobType: 'welcome',
+      jobType: 'welcome-invite',
       template: 'welcome-invite',
       templateData: {
         frontendUrl: this.getFrontEndUrl(),
-        password: data.password,
+        password,
         userName: user.name,
       },
       userId: user.id,

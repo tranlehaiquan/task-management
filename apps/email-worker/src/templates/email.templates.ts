@@ -244,11 +244,15 @@ The Task Management Team`,
    * @param userName - The user's name
    * @param password - The generated password for the user
    */
-  static welcomeInviteEmail(frontendUrl: string, userName: string, password: string): EmailTemplate {
+  static welcomeInviteEmail(
+    frontendUrl: string,
+    userName: string,
+    password: string,
+  ): EmailTemplate {
     const loginUrl = `${frontendUrl}/login`;
 
     return {
-      subject: 'Welcome to Task Management - You\'ve been invited! 🎉',
+      subject: "Welcome to Task Management - You've been invited! 🎉",
       text: `Hi ${userName},
 
 Welcome to Task Management! 🎉
@@ -333,5 +337,111 @@ The Task Management Team`,
         </div>
       `,
     };
+  }
+
+  static projectInviteEmail(
+    frontendUrl: string,
+    projectName: string,
+    projectRole: string,
+    token: string,
+  ): EmailTemplate {
+    const acceptInvitationUrl = `${frontendUrl}/accept-invitation/${token}`;
+
+    return {
+      subject: `Invitation to join project ${projectName}`,
+      text: `You are invited to join project ${projectName} with role ${projectRole}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Task Management</h1>
+          </div>
+          <div style="background-color: #eff6ff; padding: 30px; border-radius: 8px; border: 1px solid #bfdbfe;">
+            <h2 style="color: #1d4ed8; margin-top: 0; font-size: 24px;">🎉 Invitation to join project ${projectName}</h2>
+          </div>
+          <div style="background-color: white; padding: 20px; border-radius: 6px; margin: 20px 0;">
+            <h3 style="color: #1e293b; margin-top: 0;">✨ You are invited to join project ${projectName} with role ${projectRole}</h3>
+          </div>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${acceptInvitationUrl}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 16px;">Accept Invitation</a>
+          </div>
+        </div>
+      `,
+    };
+  }
+}
+
+// Centralized renderer to avoid switch-case in processor
+export namespace EmailTemplates {
+  export function renderTemplate(
+    template: NonNullable<import('@task-mgmt/queue').EmailJob['template']>,
+    data: NonNullable<import('@task-mgmt/queue').EmailJob['templateData']>,
+  ): EmailTemplate {
+    const handlers: Record<
+      NonNullable<import('@task-mgmt/queue').EmailJob['template']>,
+      (
+        data: NonNullable<import('@task-mgmt/queue').EmailJob['templateData']>,
+      ) => EmailTemplate
+    > = {
+      verification: (d) => {
+        const { frontendUrl, token, userName } = d;
+        if (!frontendUrl || !token) {
+          throw new Error(
+            'Missing required templateData for verification email: frontendUrl, token',
+          );
+        }
+        return EmailTemplates.verificationEmail(frontendUrl, token, userName);
+      },
+      'password-reset': (d) => {
+        const { frontendUrl, token, userName } = d;
+        if (!frontendUrl || !token) {
+          throw new Error(
+            'Missing required templateData for password-reset email: frontendUrl, token',
+          );
+        }
+        return EmailTemplates.passwordResetEmail(frontendUrl, token, userName);
+      },
+      welcome: (d) => {
+        const { frontendUrl, userName } = d;
+        if (!frontendUrl || !userName) {
+          throw new Error(
+            'Missing required templateData for welcome email: frontendUrl, userName',
+          );
+        }
+        return EmailTemplates.welcomeEmail(frontendUrl, userName);
+      },
+      'welcome-invite': (d) => {
+        const { frontendUrl, userName, password } = d;
+        if (!frontendUrl || !userName || !password) {
+          throw new Error(
+            'Missing required templateData for welcome-invite email: frontendUrl, userName, password',
+          );
+        }
+        return EmailTemplates.welcomeInviteEmail(
+          frontendUrl,
+          userName,
+          password,
+        );
+      },
+      'project-invite': (d) => {
+        const { frontendUrl, token, projectName, projectRole } = d;
+        if (!frontendUrl || !token || !projectName || !projectRole) {
+          throw new Error(
+            'Missing required templateData for project-invite email: frontendUrl, token, projectName, projectRole',
+          );
+        }
+        return EmailTemplates.projectInviteEmail(
+          frontendUrl,
+          projectName,
+          projectRole,
+          token,
+        );
+      },
+    };
+
+    const handler = handlers[template];
+    if (!handler) {
+      throw new Error(`Unknown email template: ${template as string}`);
+    }
+    return handler(data);
   }
 }

@@ -6,6 +6,7 @@ import { UpdateProjectDto } from './dto/update-project.dto';
 import { GetAllProjectsDto } from './dto/get-all-projects.dto';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
+import { ProjectRole } from '@task-mgmt/database';
 
 @Controller()
 export class AppController {
@@ -114,12 +115,7 @@ export class AppController {
   }
 
   @MessagePattern('member.sendInvitation')
-  sendInvitation(data: {
-    projectId: string;
-    role: string;
-    email: string;
-    invitedBy: string;
-  }) {
+  sendInvitation(data) {
     return this.appService.sendInvitation(data);
   }
 }

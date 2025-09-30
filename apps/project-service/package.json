@@ -27,6 +27,7 @@
     "@nestjs/microservices": "^11.1.6",
     "@nestjs/platform-express": "^11.1.6",
     "@task-mgmt/database": "workspace:*",
+    "@task-mgmt/queue": "workspace:*",
     "@task-mgmt/shared-config": "workspace:*",
     "@task-mgmt/shared-types": "workspace:*",
     "@task-mgmt/shared-utils": "workspace:*",

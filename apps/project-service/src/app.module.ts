@@ -1,11 +1,24 @@
 import { Module } from '@nestjs/common';
+import { ClientsModule, Transport } from '@nestjs/microservices';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from '@task-mgmt/database';
 import { ConfigModule } from '@nestjs/config';
+import { PORTS } from '@task-mgmt/shared-config';
+import { QueueModule } from '@task-mgmt/queue';
 
 @Module({
   imports: [
+    ClientsModule.register([
+      {
+        name: 'USER_SERVICE',
+        transport: Transport.TCP,
+        options: {
+          host: '127.0.0.1',
+          port: Number(process.env.USER_SERVICE_PORT ?? PORTS.USER_SERVICE),
+        },
+      },
+    ]),
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
@@ -18,6 +31,12 @@ import { ConfigModule } from '@nestjs/config';
       database: process.env.DB_NAME,
       ssl:
         process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+    }),
+    QueueModule.forRoot({
+      redis: {
+        host: process.env.REDIS_HOST,
+        port: parseInt(process.env.REDIS_PORT || '6379', 10),
+      },
     }),
   ],
   controllers: [AppController],

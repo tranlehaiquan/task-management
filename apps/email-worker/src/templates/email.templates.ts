@@ -237,4 +237,101 @@ The Task Management Team`,
       `,
     };
   }
+
+  /**
+   * Welcome email template for users invited to a project
+   * @param frontendUrl - The frontend base URL
+   * @param userName - The user's name
+   * @param password - The generated password for the user
+   */
+  static welcomeInviteEmail(frontendUrl: string, userName: string, password: string): EmailTemplate {
+    const loginUrl = `${frontendUrl}/login`;
+
+    return {
+      subject: 'Welcome to Task Management - You\'ve been invited! 🎉',
+      text: `Hi ${userName},
+
+Welcome to Task Management! 🎉
+
+You've been invited to join a project on our platform. We've created an account for you to get started right away.
+
+Your login credentials:
+- Email: Your email address (the one receiving this message)
+- Password: ${password}
+
+Please sign in and change your password after your first login for security.
+
+Sign in here: ${loginUrl}
+
+Once you're logged in, you'll be able to:
+- View and collaborate on projects you've been invited to
+- Track tasks and deadlines
+- Monitor time spent on activities
+- Communicate with your team members
+
+For security reasons, we recommend changing your password after your first login.
+
+If you have any questions, feel free to reach out to our support team.
+
+Best regards,
+The Task Management Team`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #333;">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #2563eb; margin: 0; font-size: 28px;">Task Management</h1>
+          </div>
+          
+          <div style="background-color: #eff6ff; padding: 30px; border-radius: 8px; border: 1px solid #bfdbfe;">
+            <h2 style="color: #1d4ed8; margin-top: 0; font-size: 24px;">🎉 Welcome! You've been invited</h2>
+            
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+              Hi ${userName},
+            </p>
+            
+            <p style="font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+              You've been invited to join a project on Task Management! We've created an account for you to get started right away.
+            </p>
+            
+            <div style="background-color: white; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #2563eb;">
+              <h3 style="color: #1e293b; margin-top: 0; font-size: 18px;">🔑 Your Login Credentials</h3>
+              <p style="margin: 10px 0; font-size: 14px; color: #475569;">
+                <strong>Email:</strong> Your email address (the one receiving this message)
+              </p>
+              <p style="margin: 10px 0; font-size: 14px; color: #475569;">
+                <strong>Password:</strong> <code style="background-color: #f1f5f9; padding: 2px 6px; border-radius: 3px; font-family: monospace;">${password}</code>
+              </p>
+              <p style="font-size: 12px; color: #ef4444; margin-top: 15px; margin-bottom: 0;">
+                ⚠️ Please change your password after your first login for security.
+              </p>
+            </div>
+            
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${loginUrl}" 
+                 style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: 600; font-size: 16px;">
+                Sign In to Get Started
+              </a>
+            </div>
+            
+            <div style="background-color: white; padding: 20px; border-radius: 6px; margin: 20px 0;">
+              <h3 style="color: #1e293b; margin-top: 0;">✨ Once you're logged in, you'll be able to:</h3>
+              <ul style="color: #475569; line-height: 1.8; margin: 10px 0; padding-left: 20px;">
+                <li>View and collaborate on projects you've been invited to</li>
+                <li>Track tasks and deadlines</li>
+                <li>Monitor time spent on activities</li>
+                <li>Communicate with your team members</li>
+              </ul>
+            </div>
+            
+            <p style="font-size: 14px; color: #1d4ed8; margin: 0;">
+              If you have any questions, feel free to reach out to our support team.
+            </p>
+          </div>
+          
+          <div style="text-align: center; margin-top: 30px; font-size: 14px; color: #64748b;">
+            <p>Best regards,<br>The Task Management Team</p>
+          </div>
+        </div>
+      `,
+    };
+  }
 }

@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, MaxLength } from 'class-validator';
+import { IsEmail, IsString, MinLength, MaxLength, IsBoolean, IsOptional } from 'class-validator';
 import { IsPasswordStrong } from '@task-mgmt/shared-utils';
 
 export class CreateNewUserDto {
@@ -13,4 +13,8 @@ export class CreateNewUserDto {
   @MinLength(2, { message: 'Name must be at least 2 characters long' })
   @MaxLength(100, { message: 'Name must not exceed 100 characters' })
   name: string;
+
+  @IsBoolean()
+  @IsOptional()
+  isEmailVerified?: boolean;
 }

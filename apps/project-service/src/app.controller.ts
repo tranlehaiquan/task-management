@@ -1,7 +1,6 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AppService } from './app.service';
-import { type NewProject } from '@task-mgmt/database';
 import { TransferProjectDto } from './dto/transfer-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { GetAllProjectsDto } from './dto/get-all-projects.dto';
@@ -112,5 +111,15 @@ export class AppController {
   @MessagePattern('member.updateRole')
   updateMemberRole(@Payload() data: UpdateMemberRoleDto) {
     return this.appService.updateMemberRole(data);
+  }
+
+  @MessagePattern('member.sendInvitation')
+  sendInvitation(data: {
+    projectId: string;
+    role: string;
+    email: string;
+    invitedBy: string;
+  }) {
+    return this.appService.sendInvitation(data);
   }
 }

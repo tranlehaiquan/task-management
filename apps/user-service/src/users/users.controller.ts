@@ -314,4 +314,26 @@ export class UsersController {
       };
     }
   }
+
+  @MessagePattern('user.createNewUserByInvite')
+  async createNewUserByInvite(data) {
+    const user = await this.usersService.createUser({
+      ...data,
+      isEmailVerified: true,
+    });
+
+    const result = this.queueService.addEmailJob({
+      to: user.email,
+      jobType: 'welcome',
+      template: 'welcome-invite',
+      templateData: {
+        frontendUrl: this.getFrontEndUrl(),
+        password: data.password,
+        userName: user.name,
+      },
+      userId: user.id,
+    });
+
+    return user;
+  }
 }

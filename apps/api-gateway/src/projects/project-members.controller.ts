@@ -21,6 +21,7 @@ import {
   AddProjectMemberDto,
   UpdateProjectMemberRoleDto,
 } from './dto/project-members.dto';
+import { SendInvitationDto } from './dto/project-invitation.dto';
 
 @ApiTags('Project Members')
 @Controller('projects/:projectId/members')
@@ -121,4 +122,34 @@ export class ProjectMembersController {
       }),
     );
   }
+
+  // POST	/projects/:id/invitations	Send invitation
+  @Post(':id/invitations')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: 'Send invitation to a user' })
+  async sendInvitation(
+    @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
+    @Body() body: SendInvitationDto,
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<{ success: boolean; message: string }> {
+    await this.projectValidationService.validateProjectMemberRole(
+      projectId,
+      user.id,
+      ['owner', 'admin'],
+    );
+
+    return firstValueFrom<{ success: boolean; message: string }>(
+      this.projectService.send('member.sendInvitation', {
+        projectId,
+        role: body.role,
+        email: body.email,
+        invitedBy: user.id,
+      }),
+    );
+  }
+
+  // GET	/projects/:id/invitations	List project invitations
+  // POST	/invitations/accept/:token	Accept invitation (public)
+  // POST	/invitations/decline/:token	Decline invitation (public)
 }

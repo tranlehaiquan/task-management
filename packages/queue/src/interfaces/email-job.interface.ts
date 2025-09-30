@@ -3,17 +3,18 @@ export interface EmailJob {
   subject?: string;
   text?: string;
   html?: string;
-  template?: 'verification' | 'password-reset' | 'welcome';
+  template?: 'verification' | 'password-reset' | 'welcome' | 'welcome-invite';
   templateData?: {
     frontendUrl?: string;
     token?: string;
     userName?: string;
+    password?: string;
   };
   priority?: number;
   delay?: number;
   attempts?: number;
   userId?: string;
-  jobType: 'verification' | 'welcome' | 'password-reset' | 'notification';
+  jobType: 'verification' | 'welcome' | 'password-reset' | 'notification' | 'welcome-invite';
 }
 
 export interface QueueJobOptions {

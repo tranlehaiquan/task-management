@@ -3,6 +3,7 @@ import {
   ConflictException,
   NotFoundException,
   BadRequestException,
+  Inject,
 } from '@nestjs/common';
 import {
   DatabaseService,
@@ -13,16 +14,24 @@ import {
   ProjectMember,
   PG_ERROR_CODES,
   isPostgresError,
+  User,
 } from '@task-mgmt/database';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { eq, count, asc, and, ne } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
+import { QueueService } from '@task-mgmt/queue';
 
 @Injectable()
 export class AppService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    @Inject('USER_SERVICE') private readonly userService: ClientProxy,
+    private readonly queueService: QueueService,
+  ) {}
 
   createSlug(name: string): string {
     const randomSuffix = randomBytes(4).toString('hex'); // 8 characters
@@ -498,6 +507,49 @@ export class AppService {
 
       // Re-throw any unhandled database errors
       throw error;
+    }
+  }
+
+  async sendInvitation(data: {
+    projectId: string;
+    role: string;
+    email: string;
+    invitedBy: string;
+  }) {
+    const { projectId, role, email, invitedBy } = data;
+
+    // check project exists
+    const [project] = await this.databaseService.db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .execute();
+
+    if (!project) {
+      throw new NotFoundException(`Project with ID ${projectId} not found`);
+    }
+
+    // find user by email
+    const [user] = await this.databaseService.db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .execute();
+
+    const isNewUser = !user;
+
+    if (isNewUser) {
+      const password = '123456'; // TODO: remove this
+      
+      // create new user
+      const result = await firstValueFrom<Omit<User, 'passwordHash'>>(
+        this.userService.send('user.createNewUser', {
+          email,
+          name: email,
+          password,
+          isEmailVerified: true,
+        }),
+      );
     }
   }
 }

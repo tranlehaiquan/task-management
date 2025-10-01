@@ -5,6 +5,7 @@ import type { NewUser, User } from '@task-mgmt/database';
 import { CreateNewUserDto } from './dto/createNewUser.dto';
 import type { FindUserCriteria } from './dto/findUser.dto';
 import { QueueService } from '@task-mgmt/queue';
+import { randomBytes } from 'crypto';
 
 // Type for user data without passwordHash
 type SanitizedUser = Omit<User, 'passwordHash'>;
@@ -313,5 +314,36 @@ export class UsersController {
         error: `Failed to send welcome email`,
       };
     }
+  }
+
+  @MessagePattern('user.createNewUserByInvite')
+  async createNewUserByInvite(data: { email: string; name: string }) {
+    // Generate a cryptographically secure random password
+    const password = randomBytes(12)
+      .toString('base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '')
+      .slice(0, 16);
+
+    const user = await this.usersService.createUser({
+      ...data,
+      password,
+      isEmailVerified: true,
+    });
+
+    await this.queueService.addEmailJob({
+      to: user.email,
+      jobType: 'welcome-invite',
+      template: 'welcome-invite',
+      templateData: {
+        frontendUrl: this.getFrontEndUrl(),
+        password,
+        userName: user.name,
+      },
+      userId: user.id,
+    });
+
+    return user;
   }
 }

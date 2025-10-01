@@ -3,6 +3,7 @@ import {
   ConflictException,
   NotFoundException,
   BadRequestException,
+  Inject,
 } from '@nestjs/common';
 import {
   DatabaseService,
@@ -13,16 +14,29 @@ import {
   ProjectMember,
   PG_ERROR_CODES,
   isPostgresError,
+  ProjectRole,
+  projectInvitations,
+  ProjectInvitation,
+  NewProjectMember,
+  User,
 } from '@task-mgmt/database';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { eq, count, asc, and, ne } from 'drizzle-orm';
 import { randomBytes } from 'node:crypto';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
+import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
+import { QueueService } from '@task-mgmt/queue';
+import { randomString } from '@task-mgmt/shared-utils';
 
 @Injectable()
 export class AppService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    @Inject('USER_SERVICE') private readonly userService: ClientProxy,
+    private readonly queueService: QueueService,
+  ) {}
 
   createSlug(name: string): string {
     const randomSuffix = randomBytes(4).toString('hex'); // 8 characters
@@ -297,16 +311,16 @@ export class AppService {
         throw error;
       }
 
-      if (error.code === PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
+      if (error.cause.code === PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
         // Foreign key violation
-        if (error.constraint?.includes('project_id')) {
+        if (error.cause.constraint?.includes('project_id')) {
           return {
             success: false,
             message: `Can't find project`,
             code: 'PROJECT_NOT_FOUND',
           };
         }
-        if (error.constraint?.includes('user_id')) {
+        if (error.cause.constraint?.includes('user_id')) {
           return {
             success: false,
             message: `Can't find user`,
@@ -315,7 +329,7 @@ export class AppService {
         }
       }
 
-      if (error.code === PG_ERROR_CODES.UNIQUE_VIOLATION) {
+      if (error.cause.code === PG_ERROR_CODES.UNIQUE_VIOLATION) {
         // Unique constraint violation
         return {
           success: false,
@@ -487,8 +501,8 @@ export class AppService {
         throw error;
       }
 
-      if (error.code === PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
-        if (error.constraint?.includes('project_id')) {
+      if (error.cause.code === PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
+        if (error.cause.constraint?.includes('project_id')) {
           return {
             success: false,
             message: `Can't find project`,
@@ -499,5 +513,273 @@ export class AppService {
       // Re-throw any unhandled database errors
       throw error;
     }
+  }
+
+  async sendInvitation(data: {
+    projectId: string;
+    role: ProjectRole;
+    email: string;
+    invitedBy: string;
+  }) {
+    const { projectId, role, email, invitedBy } = data;
+
+    // check project exists
+    const [project] = await this.databaseService.db
+      .select()
+      .from(projects)
+      .where(eq(projects.id, projectId))
+      .execute();
+
+    if (!project) {
+      return {
+        success: false,
+        message: 'Project not found',
+        code: 'PROJECT_NOT_FOUND',
+      } as const;
+    }
+
+    // check if project member exists by projectId and email
+    const [existingMember] = await this.databaseService.db
+      .select({ id: projectMembers.id })
+      .from(projectMembers)
+      .innerJoin(users, eq(users.id, projectMembers.userId))
+      .where(
+        and(eq(projectMembers.projectId, projectId), eq(users.email, email)),
+      )
+      .execute();
+
+    if (existingMember) {
+      return {
+        success: false,
+        message: 'Member already exists',
+        code: 'MEMBER_ALREADY_EXISTS',
+      } as const;
+    }
+
+    // Check for existing invitation (active or expired)
+    const [existingInvitation] = await this.databaseService.db
+      .select()
+      .from(projectInvitations)
+      .where(
+        and(
+          eq(projectInvitations.projectId, projectId),
+          eq(projectInvitations.email, email),
+        ),
+      )
+      .execute();
+
+    if (existingInvitation) {
+      const now = new Date();
+
+      // If invitation has expired, delete it before creating a new one
+      if (existingInvitation.expiresAt < now) {
+        await this.databaseService.db
+          .delete(projectInvitations)
+          .where(eq(projectInvitations.id, existingInvitation.id))
+          .execute();
+      } else {
+        // Active invitation already exists
+        return {
+          success: false,
+          message: 'An active invitation for this email already exists',
+          code: 'INVITATION_ALREADY_EXISTS',
+        } as const;
+      }
+    }
+
+    const token = randomString(32);
+    // expires in 5 days
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 5);
+
+    try {
+      const [projectInvitation] = await this.databaseService.db
+        .insert(projectInvitations)
+        .values({ projectId, email, token, expiresAt, invitedBy, role })
+        .returning()
+        .execute();
+
+      // send email
+      await this.queueService.addEmailJob({
+        to: email,
+        subject: 'Invitation to join project',
+        text: `You are invited to join project ${project.name} with role ${role}`,
+        template: 'project-invite',
+        templateData: {
+          frontendUrl: process.env.FRONTEND_URL,
+          projectName: project.name,
+          projectRole: role,
+          token,
+        },
+        jobType: 'project-invite',
+      });
+
+      return {
+        success: true,
+        message: 'Invitation sent',
+        data: projectInvitation,
+      };
+    } catch (error) {
+      if (
+        isPostgresError(error) &&
+        error.cause.code === PG_ERROR_CODES.UNIQUE_VIOLATION
+      ) {
+        return {
+          success: false,
+          message: 'An active invitation for this email already exists',
+          code: 'INVITATION_ALREADY_EXISTS',
+        } as const;
+      }
+
+      return {
+        success: false,
+        message: 'Failed to create invitation',
+        code: 'INTERNAL_ERROR',
+      };
+    }
+  }
+
+  async acceptInvitation(token: string) {
+    const invitationResult = await this.getInvitationByToken(token);
+
+    if (!invitationResult.success || !invitationResult.data) {
+      return invitationResult;
+    }
+
+    const invitation = invitationResult.data;
+
+    // Check if user exists by email
+    let [user] = await this.databaseService.db
+      .select()
+      .from(users)
+      .where(eq(users.email, invitation.email))
+      .execute();
+
+    const existingUser = !!user;
+
+    if (!existingUser) {
+      const newUser = await firstValueFrom<User>(
+        this.userService.send('user.createNewUserByInvite', {
+          email: invitation.email,
+          name: invitation.email,
+        }),
+      );
+
+      user = newUser;
+    }
+
+    try {
+      // Use transaction to ensure atomicity
+      const projectMember = await this.databaseService.db.transaction(
+        async (tx) => {
+          // Add user as project member
+          const [member] = await tx
+            .insert(projectMembers)
+            .values({
+              projectId: invitation.projectId,
+              userId: user.id,
+              role: invitation.role,
+            })
+            .returning()
+            .execute();
+
+          // Delete the invitation after successful acceptance
+          await tx
+            .delete(projectInvitations)
+            .where(eq(projectInvitations.id, invitation.id))
+            .execute();
+
+          return member;
+        },
+      );
+
+      return {
+        success: true,
+        message: 'Invitation accepted successfully',
+        data: projectMember,
+      };
+    } catch (error) {
+      if (
+        isPostgresError(error) &&
+        error.cause.code === PG_ERROR_CODES.UNIQUE_VIOLATION
+      ) {
+        // User is already a member, clean up the invitation
+        await this.databaseService.db
+          .delete(projectInvitations)
+          .where(eq(projectInvitations.id, invitation.id))
+          .execute();
+
+        return {
+          success: false,
+          message: 'User is already a member of this project',
+          code: 'MEMBER_ALREADY_EXISTS',
+        };
+      }
+
+      throw error;
+    }
+  }
+
+  async declineInvitation(token: string) {
+    const invitationResult = await this.getInvitationByToken(token);
+
+    if (!invitationResult.success || !invitationResult.data) {
+      return invitationResult;
+    }
+
+    if (invitationResult.data.expiresAt < new Date()) {
+      return {
+        success: false,
+        message: 'Invitation has expired',
+        code: 'INVITATION_EXPIRED',
+      };
+    }
+
+    if (invitationResult.data.status !== 'pending') {
+      return {
+        success: false,
+        message: `Invitation has already been ${invitationResult.data.status}`,
+        code: 'INVALID_INVITATION_STATUS',
+      };
+    }
+
+    await this.databaseService.db
+      .update(projectInvitations)
+      .set({ status: 'declined' })
+      .where(eq(projectInvitations.id, invitationResult.data.id))
+      .execute();
+
+    return {
+      success: true,
+      message: 'Invitation declined successfully',
+    };
+  }
+
+  async getInvitationByToken(token: string) {
+    const [invitation] = await this.databaseService.db
+      .select()
+      .from(projectInvitations)
+      .where(eq(projectInvitations.token, token))
+      .execute();
+
+    if (!invitation) {
+      return {
+        success: false,
+        message: 'Invitation not found',
+        code: 'INVITATION_NOT_FOUND',
+      };
+    }
+
+    if (invitation.expiresAt < new Date()) {
+      return {
+        success: false,
+        message: 'Invitation has expired',
+        code: 'INVITATION_EXPIRED',
+      };
+    }
+
+    return {
+      success: true,
+      data: invitation,
+    };
   }
 }

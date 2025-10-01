@@ -1,12 +1,12 @@
 import { Controller } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { AppService } from './app.service';
-import { type NewProject } from '@task-mgmt/database';
 import { TransferProjectDto } from './dto/transfer-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { GetAllProjectsDto } from './dto/get-all-projects.dto';
 import { CreateMemberDto } from './dto/create-member.dto';
 import { UpdateMemberRoleDto } from './dto/update-member-role.dto';
+import { ProjectRole } from '@task-mgmt/database';
 
 @Controller()
 export class AppController {
@@ -86,7 +86,6 @@ export class AppController {
 
       return project;
     } catch (error: unknown) {
-      console.error(error);
       return {
         success: false,
         code: 'INTERNAL_ERROR',
@@ -112,5 +111,25 @@ export class AppController {
   @MessagePattern('member.updateRole')
   updateMemberRole(@Payload() data: UpdateMemberRoleDto) {
     return this.appService.updateMemberRole(data);
+  }
+
+  @MessagePattern('member.sendInvitation')
+  sendInvitation(data) {
+    return this.appService.sendInvitation(data);
+  }
+
+  @MessagePattern('member.acceptInvitation')
+  acceptInvitation(data: string) {
+    return this.appService.acceptInvitation(data);
+  }
+
+  @MessagePattern('member.declineInvitation')
+  declineInvitation(data: string) {
+    return this.appService.declineInvitation(data);
+  }
+
+  @MessagePattern('member.getInvitationById')
+  getInvitationByToken(token: string) {
+    return this.appService.getInvitationByToken(token);
   }
 }

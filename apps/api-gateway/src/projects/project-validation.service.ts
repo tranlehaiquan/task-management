@@ -19,7 +19,7 @@ export class ProjectValidationService {
     projectId: string,
     userId: string,
   ): Promise<Project> {
-    let response: 
+    let response:
       | {
           success: false;
           code: 'PROJECT_NOT_FOUND' | 'FORBIDDEN' | 'INTERNAL_ERROR';

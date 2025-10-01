@@ -52,5 +52,4 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     };
     return priorities[jobType] || 3;
   }
-
 }

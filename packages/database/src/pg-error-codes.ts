@@ -6,16 +6,21 @@ export const PG_ERROR_CODES = {
 } as const;
 
 export interface PostgresError extends Error {
-  code: string;
-  constraint?: string;
-  detail?: string;
-  schema?: string;
-  table?: string;
-  column?: string;
+  cause: {
+    code: string;
+    constraint?: string;
+    detail?: string;
+    schema?: string;
+    table?: string;
+    column?: string;
+  };
 }
 
 export function isPostgresError(error: unknown): error is PostgresError {
   return (
-    error instanceof Error && typeof (error as PostgresError).code === 'string'
+    error instanceof Error &&
+    error.cause != null &&
+    typeof error.cause === 'object' &&
+    typeof (error as PostgresError).cause.code === 'string'
   );
 }

@@ -19,6 +19,8 @@ export interface PostgresError extends Error {
 export function isPostgresError(error: unknown): error is PostgresError {
   return (
     error instanceof Error &&
-    typeof (error as PostgresError).cause.code === 'string'
+    error.cause != null &&
+    typeof error.cause === 'object' &&
+    typeof (error.cause as any).code === 'string'
   );
 }

@@ -131,8 +131,8 @@ export class ProjectMembersController {
     );
   }
 
-  // POST	/projects/:id/invitations	Send invitation
-  @Post(':id/invitations')
+  // POST	/projects/:projectId/members/invitations	Send invitation
+  @Post('invitations')
   @UseGuards(AuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Send invitation to a user' })

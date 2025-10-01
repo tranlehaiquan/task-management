@@ -21,6 +21,6 @@ export function isPostgresError(error: unknown): error is PostgresError {
     error instanceof Error &&
     error.cause != null &&
     typeof error.cause === 'object' &&
-    typeof (error.cause as any).code === 'string'
+    typeof (error as PostgresError).cause.code === 'string'
   );
 }

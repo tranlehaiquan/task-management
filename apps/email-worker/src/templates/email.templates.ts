@@ -448,6 +448,3 @@ The Task Management Team`,
     return handler(data);
   }
 }
-
-// Export renderTemplate for backward compatibility
-export const renderTemplate = EmailTemplates.renderTemplate;

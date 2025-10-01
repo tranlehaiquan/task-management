@@ -3,7 +3,7 @@ import type { Job } from 'bullmq';
 import { Logger, BadRequestException } from '@nestjs/common';
 import { MailService } from '@task-mgmt/mail';
 import type { EmailJob } from '@task-mgmt/queue';
-import { renderTemplate } from './templates/email.templates';
+import { EmailTemplates } from './templates/email.templates';
 
 interface EmailContent {
   subject: string;
@@ -43,7 +43,10 @@ export class EmailConsumer extends WorkerHost {
     // Template-based email (preferred approach)
     if (emailData.template && emailData.templateData) {
       try {
-        return renderTemplate(emailData.template, emailData.templateData);
+        return EmailTemplates.renderTemplate(
+          emailData.template,
+          emailData.templateData,
+        );
       } catch (error) {
         this.logger.error(
           `Failed to render template '${emailData.template}'`,

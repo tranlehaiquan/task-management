@@ -14,8 +14,6 @@ import {
   ProjectMember,
   PG_ERROR_CODES,
   isPostgresError,
-  User,
-  NewProjectInvitation,
   ProjectRole,
   projectInvitations,
 } from '@task-mgmt/database';

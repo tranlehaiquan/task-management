@@ -1,4 +1,11 @@
-import { IsEmail, IsString, MinLength, MaxLength, IsBoolean, IsOptional } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  MaxLength,
+  IsBoolean,
+  IsOptional,
+} from 'class-validator';
 import { IsPasswordStrong } from '@task-mgmt/shared-utils';
 
 export class CreateNewUserDto {

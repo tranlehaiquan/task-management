@@ -86,7 +86,6 @@ export class AppController {
 
       return project;
     } catch (error: unknown) {
-      console.error(error);
       return {
         success: false,
         code: 'INTERNAL_ERROR',

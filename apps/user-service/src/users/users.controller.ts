@@ -316,8 +316,10 @@ export class UsersController {
   }
 
   @MessagePattern('user.createNewUserByInvite')
-  async createNewUserByInvite(data) {
+  async createNewUserByInvite(data: { email: string; name: string }) {
+    // todo: generate a random password and send it to user email
     const password = 'Abc@123qwe';
+
     const user = await this.usersService.createUser({
       ...data,
       password,

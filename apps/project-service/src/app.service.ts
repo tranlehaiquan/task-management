@@ -16,6 +16,8 @@ import {
   isPostgresError,
   ProjectRole,
   projectInvitations,
+  ProjectInvitation,
+  NewProjectMember,
 } from '@task-mgmt/database';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { eq, count, asc, and, ne } from 'drizzle-orm';
@@ -528,7 +530,11 @@ export class AppService {
       .execute();
 
     if (!project) {
-      throw new NotFoundException(`Project with ID ${projectId} not found`);
+      return {
+        success: false,
+        message: 'Project not found',
+        code: 'PROJECT_NOT_FOUND',
+      } as const;
     }
 
     // check if project member exists by projectId and email
@@ -547,6 +553,37 @@ export class AppService {
         message: 'Member already exists',
         code: 'MEMBER_ALREADY_EXISTS',
       } as const;
+    }
+
+    // Check for existing invitation (active or expired)
+    const [existingInvitation] = await this.databaseService.db
+      .select()
+      .from(projectInvitations)
+      .where(
+        and(
+          eq(projectInvitations.projectId, projectId),
+          eq(projectInvitations.email, email),
+        ),
+      )
+      .execute();
+
+    if (existingInvitation) {
+      const now = new Date();
+
+      // If invitation has expired, delete it before creating a new one
+      if (existingInvitation.expiresAt < now) {
+        await this.databaseService.db
+          .delete(projectInvitations)
+          .where(eq(projectInvitations.id, existingInvitation.id))
+          .execute();
+      } else {
+        // Active invitation already exists
+        return {
+          success: false,
+          message: 'An active invitation for this email already exists',
+          code: 'INVITATION_ALREADY_EXISTS',
+        } as const;
+      }
     }
 
     const token = randomString(32);
@@ -598,5 +635,116 @@ export class AppService {
         code: 'INTERNAL_ERROR',
       };
     }
+  }
+
+  async acceptInvitation(token: string) {
+    const invitationResult = await this.getInvitationByToken(token);
+
+    if (!invitationResult.success || !invitationResult.data) {
+      return invitationResult;
+    }
+
+    const invitation = invitationResult.data;
+
+    // Check if user exists by email
+    let [user] = await this.databaseService.db
+      .select()
+      .from(users)
+      .where(eq(users.email, invitation.email))
+      .execute();
+
+    const existingUser = !!user;
+
+    if (!existingUser) {
+      // if user doesn't exist, create a new user
+      const [newUser] = await firstValueFrom(
+        this.userService.send('user.createNewUserByInvite', {
+          email: invitation.email,
+          name: invitation.email,
+        }),
+      );
+
+      user = newUser;
+    }
+
+    try {
+      // Use transaction to ensure atomicity
+      const projectMember = await this.databaseService.db.transaction(
+        async (tx) => {
+          // Add user as project member
+          const [member] = await tx
+            .insert(projectMembers)
+            .values({
+              projectId: invitation.projectId,
+              userId: user.id,
+              role: invitation.role,
+            })
+            .returning()
+            .execute();
+
+          // Delete the invitation after successful acceptance
+          await tx
+            .delete(projectInvitations)
+            .where(eq(projectInvitations.id, invitation.id))
+            .execute();
+
+          return member;
+        },
+      );
+
+      return {
+        success: true,
+        message: 'Invitation accepted successfully',
+        data: projectMember,
+      };
+    } catch (error) {
+      if (
+        isPostgresError(error) &&
+        error.cause.code === PG_ERROR_CODES.UNIQUE_VIOLATION
+      ) {
+        // User is already a member, clean up the invitation
+        await this.databaseService.db
+          .delete(projectInvitations)
+          .where(eq(projectInvitations.id, invitation.id))
+          .execute();
+
+        return {
+          success: false,
+          message: 'User is already a member of this project',
+          code: 'MEMBER_ALREADY_EXISTS',
+        };
+      }
+
+      throw error;
+    }
+  }
+
+  async getInvitationByToken(token: string) {
+    const [invitation] = await this.databaseService.db
+      .select()
+      .from(projectInvitations)
+      .where(eq(projectInvitations.token, token))
+      .execute();
+
+    if (!invitation) {
+      return {
+        success: false,
+        message: 'Invitation not found',
+        code: 'INVITATION_NOT_FOUND',
+      };
+    }
+
+    if (invitation.expiresAt < new Date()) {
+      return {
+        success: false,
+        message: 'Invitation has expired',
+        code: 'INVITATION_EXPIRED',
+      };
+    }
+
+    return {
+      success: true,
+      data: invitation,
+    };
   }
 }

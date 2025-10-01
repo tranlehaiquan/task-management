@@ -1,69 +1,115 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import type { Job } from 'bullmq';
-import { Logger } from '@nestjs/common';
+import { Logger, BadRequestException } from '@nestjs/common';
 import { MailService } from '@task-mgmt/mail';
 import type { EmailJob } from '@task-mgmt/queue';
-import { EmailTemplates } from './templates/email.templates';
+import { renderTemplate } from './templates/email.templates';
+
+interface EmailContent {
+  subject: string;
+  text: string;
+  html: string;
+}
 
 @Processor('email')
 export class EmailConsumer extends WorkerHost {
   private readonly logger = new Logger(EmailConsumer.name);
+
   constructor(private readonly mailService: MailService) {
     super();
   }
 
-  private renderTemplateOrThrow(
-    template: NonNullable<EmailJob['template']>,
-    data: NonNullable<EmailJob['templateData']>,
-  ): { subject: string; text: string; html: string } {
-    return EmailTemplates.renderTemplate(template, data);
-  }
-
-  async process(job: Job<any, any, string>): Promise<any> {
+  /**
+   * Validates and extracts email data from the job
+   */
+  private validateEmailJob(job: Job): EmailJob {
     const emailData = job.data as EmailJob;
 
+    if (!emailData?.to) {
+      throw new BadRequestException('Missing required field: to');
+    }
+
+    if (!emailData?.jobType) {
+      throw new BadRequestException('Missing required field: jobType');
+    }
+
+    return emailData;
+  }
+
+  /**
+   * Resolves email content from either template or direct content
+   */
+  private resolveEmailContent(emailData: EmailJob): EmailContent {
+    // Template-based email (preferred approach)
+    if (emailData.template && emailData.templateData) {
+      try {
+        return renderTemplate(emailData.template, emailData.templateData);
+      } catch (error) {
+        this.logger.error(
+          `Failed to render template '${emailData.template}'`,
+          error,
+        );
+        throw error;
+      }
+    }
+
+    // Direct content email (backward compatibility)
+    if (emailData.subject && emailData.text && emailData.html) {
+      return {
+        subject: emailData.subject,
+        text: emailData.text,
+        html: emailData.html,
+      };
+    }
+
+    throw new BadRequestException(
+      'Email must include either (template + templateData) or (subject + text + html)',
+    );
+  }
+
+  /**
+   * Sends the email using the mail service
+   */
+  private async sendEmail(to: string, content: EmailContent): Promise<void> {
+    await this.mailService.transporter.sendMail({
+      to,
+      subject: content.subject,
+      text: content.text,
+      html: content.html,
+    });
+  }
+
+  async process(job: Job<EmailJob>): Promise<void> {
+    const startTime = Date.now();
+
     try {
+      // Validate job data
+      const emailData = this.validateEmailJob(job);
+
       this.logger.log(
         `Processing email job ${job.id}: ${emailData.jobType} to ${emailData.to}`,
       );
 
-      let emailContent: { subject: string; text: string; html: string };
+      // Resolve email content
+      const emailContent = this.resolveEmailContent(emailData);
 
-      // Handle template-based emails
-      if (emailData.template && emailData.templateData) {
-        emailContent = this.renderTemplateOrThrow(
-          emailData.template,
-          emailData.templateData,
-        );
-      } else {
-        // Handle direct content emails (backward compatibility)
-        if (!emailData.subject || !emailData.text || !emailData.html) {
-          throw new Error(
-            'Missing required email content: subject, text, html',
-          );
-        }
-        emailContent = {
-          subject: emailData.subject,
-          text: emailData.text,
-          html: emailData.html,
-        };
-      }
+      // Send email
+      await this.sendEmail(emailData.to, emailContent);
 
-      await this.mailService.transporter.sendMail({
-        to: emailData.to,
-        subject: emailContent.subject,
-        text: emailContent.text,
-        html: emailContent.html,
-      });
-
+      const duration = Date.now() - startTime;
       this.logger.log(
-        `Email sent successfully: ${emailData.jobType} to ${emailData.to}`,
+        `Email sent successfully: ${emailData.jobType} to ${emailData.to} (${duration}ms)`,
       );
     } catch (error) {
+      const emailData = job.data;
+      const duration = Date.now() - startTime;
+
       this.logger.error(
-        `Failed to send email: ${emailData.jobType} to ${emailData.to}`,
-        error,
+        `Failed to send email (job: ${job.id}, type: ${emailData?.jobType}, to: ${emailData?.to}, duration: ${duration}ms)`,
+        error instanceof Error ? error.stack : error,
       );
+
+      // Re-throw to let BullMQ handle retries
       throw error;
     }
   }

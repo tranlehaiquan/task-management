@@ -18,6 +18,7 @@ import {
   projectInvitations,
   ProjectInvitation,
   NewProjectMember,
+  User,
 } from '@task-mgmt/database';
 import { UpdateProjectDto } from './dto/update-project.dto';
 import { eq, count, asc, and, ne } from 'drizzle-orm';
@@ -656,8 +657,7 @@ export class AppService {
     const existingUser = !!user;
 
     if (!existingUser) {
-      // if user doesn't exist, create a new user
-      const newUser = await firstValueFrom(
+      const newUser = await firstValueFrom<User>(
         this.userService.send('user.createNewUserByInvite', {
           email: invitation.email,
           name: invitation.email,

@@ -371,77 +371,71 @@ The Task Management Team`,
 }
 
 // Centralized renderer to avoid switch-case in processor
-export namespace EmailTemplates {
-  export function renderTemplate(
-    template: NonNullable<import('@task-mgmt/queue').EmailJob['template']>,
-    data: NonNullable<import('@task-mgmt/queue').EmailJob['templateData']>,
-  ): EmailTemplate {
-    const handlers: Record<
-      NonNullable<import('@task-mgmt/queue').EmailJob['template']>,
-      (
-        data: NonNullable<import('@task-mgmt/queue').EmailJob['templateData']>,
-      ) => EmailTemplate
-    > = {
-      verification: (d) => {
-        const { frontendUrl, token, userName } = d;
-        if (!frontendUrl || !token) {
-          throw new Error(
-            'Missing required templateData for verification email: frontendUrl, token',
-          );
-        }
-        return EmailTemplates.verificationEmail(frontendUrl, token, userName);
-      },
-      'password-reset': (d) => {
-        const { frontendUrl, token, userName } = d;
-        if (!frontendUrl || !token) {
-          throw new Error(
-            'Missing required templateData for password-reset email: frontendUrl, token',
-          );
-        }
-        return EmailTemplates.passwordResetEmail(frontendUrl, token, userName);
-      },
-      welcome: (d) => {
-        const { frontendUrl, userName } = d;
-        if (!frontendUrl || !userName) {
-          throw new Error(
-            'Missing required templateData for welcome email: frontendUrl, userName',
-          );
-        }
-        return EmailTemplates.welcomeEmail(frontendUrl, userName);
-      },
-      'welcome-invite': (d) => {
-        const { frontendUrl, userName, password } = d;
-        if (!frontendUrl || !userName || !password) {
-          throw new Error(
-            'Missing required templateData for welcome-invite email: frontendUrl, userName, password',
-          );
-        }
-        return EmailTemplates.welcomeInviteEmail(
-          frontendUrl,
-          userName,
-          password,
+export function renderTemplate(
+  template: NonNullable<import('@task-mgmt/queue').EmailJob['template']>,
+  data: NonNullable<import('@task-mgmt/queue').EmailJob['templateData']>,
+): EmailTemplate {
+  const handlers: Record<
+    NonNullable<import('@task-mgmt/queue').EmailJob['template']>,
+    (
+      data: NonNullable<import('@task-mgmt/queue').EmailJob['templateData']>,
+    ) => EmailTemplate
+  > = {
+    verification: (d) => {
+      const { frontendUrl, token, userName } = d;
+      if (!frontendUrl || !token) {
+        throw new Error(
+          'Missing required templateData for verification email: frontendUrl, token',
         );
-      },
-      'project-invite': (d) => {
-        const { frontendUrl, token, projectName, projectRole } = d;
-        if (!frontendUrl || !token || !projectName || !projectRole) {
-          throw new Error(
-            'Missing required templateData for project-invite email: frontendUrl, token, projectName, projectRole',
-          );
-        }
-        return EmailTemplates.projectInviteEmail(
-          frontendUrl,
-          projectName,
-          projectRole,
-          token,
+      }
+      return EmailTemplates.verificationEmail(frontendUrl, token, userName);
+    },
+    'password-reset': (d) => {
+      const { frontendUrl, token, userName } = d;
+      if (!frontendUrl || !token) {
+        throw new Error(
+          'Missing required templateData for password-reset email: frontendUrl, token',
         );
-      },
-    };
+      }
+      return EmailTemplates.passwordResetEmail(frontendUrl, token, userName);
+    },
+    welcome: (d) => {
+      const { frontendUrl, userName } = d;
+      if (!frontendUrl || !userName) {
+        throw new Error(
+          'Missing required templateData for welcome email: frontendUrl, userName',
+        );
+      }
+      return EmailTemplates.welcomeEmail(frontendUrl, userName);
+    },
+    'welcome-invite': (d) => {
+      const { frontendUrl, userName, password } = d;
+      if (!frontendUrl || !userName || !password) {
+        throw new Error(
+          'Missing required templateData for welcome-invite email: frontendUrl, userName, password',
+        );
+      }
+      return EmailTemplates.welcomeInviteEmail(frontendUrl, userName, password);
+    },
+    'project-invite': (d) => {
+      const { frontendUrl, token, projectName, projectRole } = d;
+      if (!frontendUrl || !token || !projectName || !projectRole) {
+        throw new Error(
+          'Missing required templateData for project-invite email: frontendUrl, token, projectName, projectRole',
+        );
+      }
+      return EmailTemplates.projectInviteEmail(
+        frontendUrl,
+        projectName,
+        projectRole,
+        token,
+      );
+    },
+  };
 
-    const handler = handlers[template];
-    if (!handler) {
-      throw new Error(`Unknown email template: ${template as string}`);
-    }
-    return handler(data);
+  const handler = handlers[template];
+  if (!handler) {
+    throw new Error(`Unknown email template: ${template as string}`);
   }
+  return handler(data);
 }

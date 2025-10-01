@@ -183,8 +183,4 @@ export class ProjectMembersController {
       message: 'Invitation sent successfully',
     };
   }
-
-  // GET	/projects/:id/invitations	List project invitations
-  // POST	/invitations/accept/:token	Accept invitation (public)
-  // POST	/invitations/decline/:token	Decline invitation (public)
 }

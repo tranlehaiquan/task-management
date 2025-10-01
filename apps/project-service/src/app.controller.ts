@@ -117,4 +117,19 @@ export class AppController {
   sendInvitation(data) {
     return this.appService.sendInvitation(data);
   }
+
+  @MessagePattern('member.acceptInvitation')
+  acceptInvitation(data: string) {
+    return this.appService.acceptInvitation(data);
+  }
+
+  @MessagePattern('member.declineInvitation')
+  declineInvitation(data: string) {
+    return this.appService.declineInvitation(data);
+  }
+
+  @MessagePattern('member.getInvitationById')
+  getInvitationByToken(token: string) {
+    return this.appService.getInvitationByToken(token);
+  }
 }

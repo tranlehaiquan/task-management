@@ -15,7 +15,7 @@ import { QueueModule } from '@task-mgmt/queue';
         transport: Transport.TCP,
         options: {
           host: '127.0.0.1',
-          port: Number(process.env.USER_SERVICE_PORT ?? PORTS.USER_SERVICE),
+          port: Number(PORTS.USER_SERVICE),
         },
       },
     ]),

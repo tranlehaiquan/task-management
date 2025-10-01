@@ -657,7 +657,7 @@ export class AppService {
 
     if (!existingUser) {
       // if user doesn't exist, create a new user
-      const [newUser] = await firstValueFrom(
+      const newUser = await firstValueFrom(
         this.userService.send('user.createNewUserByInvite', {
           email: invitation.email,
           name: invitation.email,
@@ -717,6 +717,41 @@ export class AppService {
 
       throw error;
     }
+  }
+
+  async declineInvitation(token: string) {
+    const invitationResult = await this.getInvitationByToken(token);
+
+    if (!invitationResult.success || !invitationResult.data) {
+      return invitationResult;
+    }
+
+    if (invitationResult.data.expiresAt < new Date()) {
+      return {
+        success: false,
+        message: 'Invitation has expired',
+        code: 'INVITATION_EXPIRED',
+      };
+    }
+
+    if (invitationResult.data.status !== 'pending') {
+      return {
+        success: false,
+        message: `Invitation has already been ${invitationResult.data.status}`,
+        code: 'INVALID_INVITATION_STATUS',
+      };
+    }
+
+    await this.databaseService.db
+      .update(projectInvitations)
+      .set({ status: 'declined' })
+      .where(eq(projectInvitations.id, invitationResult.data.id))
+      .execute();
+
+    return {
+      success: true,
+      message: 'Invitation declined successfully',
+    };
   }
 
   async getInvitationByToken(token: string) {

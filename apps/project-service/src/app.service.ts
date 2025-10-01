@@ -308,16 +308,16 @@ export class AppService {
         throw error;
       }
 
-      if (error.code === PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
+      if (error.cause.code === PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
         // Foreign key violation
-        if (error.constraint?.includes('project_id')) {
+        if (error.cause.constraint?.includes('project_id')) {
           return {
             success: false,
             message: `Can't find project`,
             code: 'PROJECT_NOT_FOUND',
           };
         }
-        if (error.constraint?.includes('user_id')) {
+        if (error.cause.constraint?.includes('user_id')) {
           return {
             success: false,
             message: `Can't find user`,
@@ -326,7 +326,7 @@ export class AppService {
         }
       }
 
-      if (error.code === PG_ERROR_CODES.UNIQUE_VIOLATION) {
+      if (error.cause.code === PG_ERROR_CODES.UNIQUE_VIOLATION) {
         // Unique constraint violation
         return {
           success: false,
@@ -498,8 +498,8 @@ export class AppService {
         throw error;
       }
 
-      if (error.code === PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
-        if (error.constraint?.includes('project_id')) {
+      if (error.cause.code === PG_ERROR_CODES.FOREIGN_KEY_VIOLATION) {
+        if (error.cause.constraint?.includes('project_id')) {
           return {
             success: false,
             message: `Can't find project`,
@@ -553,31 +553,50 @@ export class AppService {
     // expires in 5 days
     const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 5);
 
-    const [projectInvitation] = await this.databaseService.db
-      .insert(projectInvitations)
-      .values({ projectId, email, token, expiresAt, invitedBy, role })
-      .returning()
-      .execute();
+    try {
+      const [projectInvitation] = await this.databaseService.db
+        .insert(projectInvitations)
+        .values({ projectId, email, token, expiresAt, invitedBy, role })
+        .returning()
+        .execute();
 
-    // send email
-    await this.queueService.addEmailJob({
-      to: email,
-      subject: 'Invitation to join project',
-      text: `You are invited to join project ${project.name} with role ${role}`,
-      template: 'project-invite',
-      templateData: {
-        frontendUrl: process.env.FRONTEND_URL,
-        projectName: project.name,
-        projectRole: role,
-        token,
-      },
-      jobType: 'project-invite',
-    });
+      // send email
+      await this.queueService.addEmailJob({
+        to: email,
+        subject: 'Invitation to join project',
+        text: `You are invited to join project ${project.name} with role ${role}`,
+        template: 'project-invite',
+        templateData: {
+          frontendUrl: process.env.FRONTEND_URL,
+          projectName: project.name,
+          projectRole: role,
+          token,
+        },
+        jobType: 'project-invite',
+      });
 
-    return {
-      success: true,
-      message: 'Invitation sent',
-      data: projectInvitation,
-    };
+      return {
+        success: true,
+        message: 'Invitation sent',
+        data: projectInvitation,
+      };
+    } catch (error) {
+      if (
+        isPostgresError(error) &&
+        error.cause.code === PG_ERROR_CODES.UNIQUE_VIOLATION
+      ) {
+        return {
+          success: false,
+          message: 'An active invitation for this email already exists',
+          code: 'INVITATION_ALREADY_EXISTS',
+        } as const;
+      }
+
+      return {
+        success: false,
+        message: 'Failed to create invitation',
+        code: 'INTERNAL_ERROR',
+      };
+    }
   }
 }

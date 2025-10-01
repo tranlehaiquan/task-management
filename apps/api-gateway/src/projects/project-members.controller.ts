@@ -9,6 +9,7 @@ import {
   Inject,
   ParseUUIDPipe,
   Put,
+  BadRequestException,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { firstValueFrom } from 'rxjs';
@@ -22,6 +23,7 @@ import {
   UpdateProjectMemberRoleDto,
 } from './dto/project-members.dto';
 import { SendInvitationDto } from './dto/project-invitation.dto';
+import { ProjectInvitation } from '@task-mgmt/database';
 
 @ApiTags('Project Members')
 @Controller('projects/:projectId/members')
@@ -66,13 +68,19 @@ export class ProjectMembersController {
       ['owner', 'admin'],
     );
 
-    return firstValueFrom<{ success: boolean; message: string }>(
+    const result = await firstValueFrom<{ success: boolean; message: string }>(
       this.projectService.send('member.create', {
         projectId,
         userId: body.userId,
         role: body.role,
       }),
     );
+
+    if (!result.success) {
+      throw new BadRequestException(result.message);
+    }
+
+    return result;
   }
 
   @Put(':memberId')
@@ -132,14 +140,29 @@ export class ProjectMembersController {
     @Param('projectId', new ParseUUIDPipe({ version: '4' })) projectId: string,
     @Body() body: SendInvitationDto,
     @CurrentUser() user: CurrentUserType,
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      id: string;
+    };
+  }> {
     await this.projectValidationService.validateProjectMemberRole(
       projectId,
       user.id,
       ['owner', 'admin'],
     );
 
-    return firstValueFrom<{ success: boolean; message: string }>(
+    const projectInvited = await firstValueFrom<
+      | {
+          success: true;
+          data: ProjectInvitation;
+        }
+      | {
+          success: false;
+          message: string;
+        }
+    >(
       this.projectService.send('member.sendInvitation', {
         projectId,
         role: body.role,
@@ -147,6 +170,18 @@ export class ProjectMembersController {
         invitedBy: user.id,
       }),
     );
+
+    if (!projectInvited.success) {
+      throw new BadRequestException(projectInvited.message);
+    }
+
+    return {
+      success: true,
+      data: {
+        id: projectInvited.data.id,
+      },
+      message: 'Invitation sent successfully',
+    };
   }
 
   // GET	/projects/:id/invitations	List project invitations

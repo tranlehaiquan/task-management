@@ -76,7 +76,7 @@ Created complete authentication UI:
 
 ## Architecture
 
-```
+```text
 ┌─────────────┐
 │   Browser   │
 └──────┬──────┘

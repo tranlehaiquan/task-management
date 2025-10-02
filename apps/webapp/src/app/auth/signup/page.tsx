@@ -4,55 +4,35 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { signIn } from 'next-auth/react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { registerUser } from '../actions'
+import { signUpSchema, type SignUpFormData } from '@/lib/validations/auth'
 
 export default function SignUpPage() {
   const router = useRouter()
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignUpFormData>({
+    resolver: zodResolver(signUpSchema),
+    mode: 'onBlur',
+  })
+
+  const onSubmit = async (data: SignUpFormData) => {
     setError('')
-
-    // Client-side validation
-    if (!name.trim()) {
-      setError('Please enter your name')
-      return
-    }
-
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('Please enter a valid email address')
-      return
-    }
-
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long')
-      return
-    }
-
-    if (!/\d/.test(password)) {
-      setError('Password must contain at least one number')
-      return
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      return
-    }
-
     setIsLoading(true)
 
     try {
       // Register the user via server action
       const registerResult = await registerUser(
-        email.trim(),
-        password,
-        name.trim(),
+        data.email,
+        data.password,
+        data.name,
       )
 
       if (!registerResult.success) {
@@ -74,8 +54,8 @@ export default function SignUpPage() {
 
       // Automatically sign in after successful registration
       const result = await signIn('credentials', {
-        email: email.trim(),
-        password,
+        email: data.email,
+        password: data.password,
         redirect: false,
       })
 
@@ -117,7 +97,7 @@ export default function SignUpPage() {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {error && (
             <div className="rounded-md bg-red-50 border border-red-200 p-4">
               <div className="flex">
@@ -151,18 +131,21 @@ export default function SignUpPage() {
               </label>
               <input
                 id="name"
-                name="name"
                 type="text"
                 autoComplete="name"
-                required
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value)
-                  if (error) setError('')
-                }}
-                className="relative block w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                {...register('name', {
+                  onChange: () => setError(''),
+                })}
+                className={`relative block w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ${
+                  errors.name ? 'ring-red-500' : 'ring-gray-300'
+                } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
                 placeholder="Full name"
               />
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.name.message}
+                </p>
+              )}
             </div>
 
             <div>
@@ -171,18 +154,21 @@ export default function SignUpPage() {
               </label>
               <input
                 id="email"
-                name="email"
                 type="email"
                 autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value)
-                  if (error) setError('')
-                }}
-                className="relative block w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                {...register('email', {
+                  onChange: () => setError(''),
+                })}
+                className={`relative block w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ${
+                  errors.email ? 'ring-red-500' : 'ring-gray-300'
+                } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
                 placeholder="Email address"
               />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
             <div>
@@ -191,38 +177,44 @@ export default function SignUpPage() {
               </label>
               <input
                 id="password"
-                name="password"
                 type="password"
                 autoComplete="new-password"
-                required
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value)
-                  if (error) setError('')
-                }}
-                className="relative block w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                {...register('password', {
+                  onChange: () => setError(''),
+                })}
+                className={`relative block w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ${
+                  errors.password ? 'ring-red-500' : 'ring-gray-300'
+                } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
                 placeholder="Password (min. 8 characters, include a number)"
               />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
             <div>
-              <label htmlFor="confirm-password" className="sr-only">
+              <label htmlFor="confirmPassword" className="sr-only">
                 Confirm password
               </label>
               <input
-                id="confirm-password"
-                name="confirm-password"
+                id="confirmPassword"
                 type="password"
                 autoComplete="new-password"
-                required
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value)
-                  if (error) setError('')
-                }}
-                className="relative block w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                {...register('confirmPassword', {
+                  onChange: () => setError(''),
+                })}
+                className={`relative block w-full rounded-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ${
+                  errors.confirmPassword ? 'ring-red-500' : 'ring-gray-300'
+                } placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
                 placeholder="Confirm password"
               />
+              {errors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
             </div>
           </div>
 

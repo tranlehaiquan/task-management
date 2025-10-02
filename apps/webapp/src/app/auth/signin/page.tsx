@@ -4,35 +4,32 @@ import { signIn } from 'next-auth/react'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { signInSchema, type SignInFormData } from '@/lib/validations/auth'
 
 export default function SignInPage() {
   const router = useRouter()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignInFormData>({
+    resolver: zodResolver(signInSchema),
+    mode: 'onBlur',
+  })
+
+  const onSubmit = async (data: SignInFormData) => {
     setError('')
-
-    // Client-side validation
-    if (!email || !password) {
-      setError('Please enter both email and password')
-      return
-    }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('Please enter a valid email address')
-      return
-    }
-
     setIsLoading(true)
 
     try {
       const result = await signIn('credentials', {
-        email: email.trim(),
-        password,
+        email: data.email,
+        password: data.password,
         redirect: false,
       })
 
@@ -93,7 +90,7 @@ export default function SignInPage() {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           {error && (
             <div className="rounded-md bg-red-50 border border-red-200 p-4">
               <div className="flex">
@@ -127,18 +124,21 @@ export default function SignInPage() {
               </label>
               <input
                 id="email"
-                name="email"
                 type="email"
                 autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value)
-                  if (error) setError('') // Clear error on input change
-                }}
-                className="relative block w-full rounded-t-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                {...register('email', {
+                  onChange: () => setError(''),
+                })}
+                className={`relative block w-full rounded-t-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ${
+                  errors.email ? 'ring-red-500' : 'ring-gray-300'
+                } placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
                 placeholder="Email address"
               />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
             <div>
               <label htmlFor="password" className="sr-only">
@@ -146,18 +146,21 @@ export default function SignInPage() {
               </label>
               <input
                 id="password"
-                name="password"
                 type="password"
                 autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value)
-                  if (error) setError('') // Clear error on input change
-                }}
-                className="relative block w-full rounded-b-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                {...register('password', {
+                  onChange: () => setError(''),
+                })}
+                className={`relative block w-full rounded-b-md border-0 px-3 py-2 text-gray-900 ring-1 ring-inset ${
+                  errors.password ? 'ring-red-500' : 'ring-gray-300'
+                } placeholder:text-gray-400 focus:z-10 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
                 placeholder="Password"
               />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
           </div>
 

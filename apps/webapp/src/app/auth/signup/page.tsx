@@ -49,7 +49,7 @@ export default function SignUpPage() {
       )
 
       if (!registerResult.success) {
-        const errorMessage = registerResult.error || 'Registration failed'
+        const errorMessage = registerResult.error ?? 'Registration failed'
         if (errorMessage.includes('already exists')) {
           setError(
             'An account with this email already exists. Please sign in instead.',

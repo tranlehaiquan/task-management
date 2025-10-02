@@ -35,10 +35,7 @@ export default async function HomePage() {
                 >
                   View Profile
                 </Link>
-                <LogoutButton
-                  variant="secondary"
-                  className="px-6 py-3 text-lg shadow-lg"
-                />
+                <LogoutButton className="px-6 py-3 text-lg shadow-lg" />
               </div>
             </div>
           ) : (

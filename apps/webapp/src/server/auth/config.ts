@@ -97,10 +97,10 @@ export const authConfig = {
       return token
     },
     async session({ session, token }) {
-      if (token && token.id && token.email && token.name !== undefined) {
+      if (token?.id && token?.email && token?.name) {
         session.user.id = token.id as string
-        session.user.email = token.email as string
-        session.user.name = (token.name as string) ?? ''
+        session.user.email = token.email
+        session.user.name = token.name ?? ''
         session.user.avatarUrl = (token.avatarUrl as string | null) ?? null
         session.user.isActive = (token.isActive as boolean) ?? true
         session.user.isEmailVerified =

@@ -63,7 +63,7 @@ npx shadcn@latest add --all
 
 ### Method 2: Manual Installation
 
-If the CLI doesn't work, manually copy components from https://ui.shadcn.com/docs/components
+If the CLI doesn't work, manually copy components from [shadcn components docs](https://ui.shadcn.com/docs/components)
 
 1. Copy the component code from the shadcn docs
 2. Create the file in `src/components/ui/[component-name].tsx`

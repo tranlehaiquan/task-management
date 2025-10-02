@@ -1,69 +1,103 @@
-import Link from "next/link";
+import Link from 'next/link'
+import { auth } from '~/server/auth'
+import { LogoutButton } from '~/components/logout-button'
 
-import { LatestPost } from "~/app/_components/post";
-import { auth } from "~/server/auth";
-import { api, HydrateClient } from "~/trpc/server";
-
-export default async function Home() {
-  const hello = await api.post.hello({ text: "from tRPC" });
-  const session = await auth();
-
-  if (session?.user) {
-    void api.post.getLatest.prefetch();
-  }
+export default async function HomePage() {
+  const session = await auth()
 
   return (
-    <HydrateClient>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c] text-white">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
-          <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
-            Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
+    <div className="min-h-screen bg-gradient-to-br from-indigo-500 to-purple-600">
+      <div className="flex min-h-screen items-center justify-center px-4">
+        <div className="w-full max-w-4xl text-center">
+          <h1 className="mb-4 text-6xl font-bold text-white">
+            Task Management System
           </h1>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-              href="https://create.t3.gg/en/usage/first-steps"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">First Steps →</h3>
-              <div className="text-lg">
-                Just the basics - Everything you need to know to set up your
-                database and authentication.
-              </div>
-            </Link>
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-              href="https://create.t3.gg/en/introduction"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">Documentation →</h3>
-              <div className="text-lg">
-                Learn more about Create T3 App, the libraries it uses, and how
-                to deploy it.
-              </div>
-            </Link>
-          </div>
-          <div className="flex flex-col items-center gap-2">
-            <p className="text-2xl text-white">
-              {hello ? hello.greeting : "Loading tRPC query..."}
-            </p>
+          <p className="mb-8 text-xl text-indigo-100">
+            Integrated with API Gateway Authentication
+          </p>
 
-            <div className="flex flex-col items-center justify-center gap-4">
-              <p className="text-center text-2xl text-white">
-                {session && <span>Logged in as {session.user?.name}</span>}
+          {session ? (
+            <div className="space-y-4">
+              <p className="text-lg text-white">
+                Welcome back,{' '}
+                <span className="font-semibold">{session.user.name}</span>!
               </p>
+              <div className="flex justify-center space-x-4">
+                <Link
+                  href="/dashboard"
+                  className="rounded-md bg-white px-6 py-3 text-lg font-semibold text-indigo-600 shadow-lg hover:bg-indigo-50"
+                >
+                  Go to Dashboard
+                </Link>
+                <Link
+                  href="/profile"
+                  className="rounded-md bg-indigo-700 px-6 py-3 text-lg font-semibold text-white shadow-lg hover:bg-indigo-800"
+                >
+                  View Profile
+                </Link>
+                <LogoutButton
+                  variant="secondary"
+                  className="px-6 py-3 text-lg shadow-lg"
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-center space-x-4">
               <Link
-                href={session ? "/api/auth/signout" : "/api/auth/signin"}
-                className="rounded-full bg-white/10 px-10 py-3 font-semibold no-underline transition hover:bg-white/20"
+                href="/auth/signin"
+                className="rounded-md bg-white px-6 py-3 text-lg font-semibold text-indigo-600 shadow-lg hover:bg-indigo-50"
               >
-                {session ? "Sign out" : "Sign in"}
+                Sign In
               </Link>
+              <Link
+                href="/auth/signup"
+                className="rounded-md bg-indigo-700 px-6 py-3 text-lg font-semibold text-white shadow-lg hover:bg-indigo-800"
+              >
+                Sign Up
+              </Link>
+            </div>
+          )}
+
+          <div className="mt-12 rounded-lg bg-white/10 p-6 backdrop-blur-sm">
+            <h2 className="mb-4 text-2xl font-bold text-white">Features</h2>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="rounded-lg bg-white/20 p-4">
+                <h3 className="mb-2 font-semibold text-white">
+                  Secure Authentication
+                </h3>
+                <p className="text-sm text-indigo-100">
+                  JWT-based auth with NextAuth.js
+                </p>
+              </div>
+              <div className="rounded-lg bg-white/20 p-4">
+                <h3 className="mb-2 font-semibold text-white">
+                  API Gateway Integration
+                </h3>
+                <p className="text-sm text-indigo-100">
+                  Connected to NestJS microservices
+                </p>
+              </div>
+              <div className="rounded-lg bg-white/20 p-4">
+                <h3 className="mb-2 font-semibold text-white">Type-Safe</h3>
+                <p className="text-sm text-indigo-100">
+                  Full TypeScript support
+                </p>
+              </div>
             </div>
           </div>
 
-          {session?.user && <LatestPost />}
+          <div className="mt-8">
+            <a
+              href="http://localhost:3000/api/docs"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-indigo-200 hover:text-white underline"
+            >
+              View API Documentation (Swagger)
+            </a>
+          </div>
         </div>
-      </main>
-    </HydrateClient>
-  );
+      </div>
+    </div>
+  )
 }

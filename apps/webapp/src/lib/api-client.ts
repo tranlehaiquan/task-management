@@ -4,6 +4,11 @@
 
 import { env } from '~/env'
 
+/**
+ * User object returned from the API.
+ * Date fields are ISO 8601 strings as returned from JSON.
+ * Parse to Date objects at point of use if needed: new Date(user.createdAt)
+ */
 export interface User {
   id: string
   email: string
@@ -11,9 +16,9 @@ export interface User {
   avatarUrl: string | null
   isActive: boolean
   isEmailVerified: boolean
-  lastLoginAt: Date | null
-  createdAt: Date
-  updatedAt: Date
+  lastLoginAt: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 export interface LoginResponse {

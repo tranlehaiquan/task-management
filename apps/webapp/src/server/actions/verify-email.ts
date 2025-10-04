@@ -14,7 +14,7 @@ export async function sendVerificationEmail(): Promise<{
   try {
     const session = await auth();
 
-    if (!session || !session.accessToken) {
+    if (!session?.accessToken) {
       return {
         success: false,
         error: "You must be logged in to verify your email",

@@ -49,7 +49,7 @@ export default function ForgotPasswordPage() {
         setSuccess(true);
       } else {
         setError(
-          result.error ||
+          result.error ??
             "Failed to send password reset email. Please try again.",
         );
       }

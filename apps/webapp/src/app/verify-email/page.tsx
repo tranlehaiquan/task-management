@@ -28,14 +28,14 @@ export default function VerifyEmailPage() {
 
         if (result.success) {
           setStatus("success");
-          setMessage(result.message || "Email verified successfully!");
+          setMessage(result.message ?? "Email verified successfully!");
           // Redirect to dashboard after 3 seconds
           setTimeout(() => {
             router.push("/dashboard");
           }, 3000);
         } else {
           setStatus("error");
-          setMessage(result.error || "Failed to verify email");
+          setMessage(result.error ?? "Failed to verify email");
         }
       } catch (error) {
         setStatus("error");

@@ -41,7 +41,7 @@ export function VerifyEmailButton({
       } else {
         setMessage({
           type: "error",
-          text: result.error || "Failed to send verification email",
+          text: result.error ?? "Failed to send verification email",
         });
       }
     } catch (error) {

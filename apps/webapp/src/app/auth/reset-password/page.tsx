@@ -59,7 +59,7 @@ export default function ResetPasswordPage() {
         if (result.success) {
           setIsValidToken(true);
         } else {
-          setError(result.error || "Invalid or expired reset token");
+          setError(result.error ?? "Invalid or expired reset token");
         }
       } catch (err) {
         console.error("Token validation error:", err);
@@ -91,7 +91,7 @@ export default function ResetPasswordPage() {
           router.push("/auth/signin");
         }, 3000);
       } else {
-        setError(result.error || "Failed to reset password. Please try again.");
+        setError(result.error ?? "Failed to reset password. Please try again.");
       }
     } catch (err) {
       console.error("Reset password error:", err);
@@ -127,7 +127,7 @@ export default function ResetPasswordPage() {
                 <AlertCircle className="size-4" />
                 <AlertTitle>Invalid Token</AlertTitle>
                 <AlertDescription>
-                  {error ||
+                  {error ??
                     "This password reset link is invalid or has expired. Please request a new one."}
                 </AlertDescription>
               </Alert>

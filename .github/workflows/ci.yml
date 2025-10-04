@@ -41,3 +41,6 @@ jobs:
         run: pnpm build
         env:
           CI: true
+          NODE_ENV: production
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET || 'ci-build-dummy-secret-min-32-chars-long' }}
+          API_GATEWAY_URL: http://localhost:3000

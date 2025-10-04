@@ -30,7 +30,7 @@
     "@task-mgmt/shared-config": "workspace:*",
     "@task-mgmt/shared-types": "workspace:*",
     "@types/jsonwebtoken": "^9.0.10",
-    "drizzle-orm": "^0.44.5",
+    "drizzle-orm": "^0.44.6",
     "jsonwebtoken": "^9.0.2",
     "neverthrow": "^8.2.0",
     "reflect-metadata": "^0.2.2",

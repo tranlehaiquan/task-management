@@ -1,13 +1,14 @@
-import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import { auth } from '~/server/auth'
-import { LogoutButton } from '~/components/logout-button'
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import { auth } from "~/server/auth";
+import { LogoutButton } from "~/components/logout-button";
+import { VerifyEmailButton } from "~/components/verify-email-button";
 
 export default async function DashboardPage() {
-  const session = await auth()
+  const session = await auth();
 
   if (!session) {
-    redirect('/auth/signin')
+    redirect("/auth/signin");
   }
 
   return (
@@ -23,8 +24,8 @@ export default async function DashboardPage() {
               >
                 Task Management
               </Link>
-              <nav className="hidden md:flex space-x-4">
-                <Link href="/dashboard" className="text-gray-900 font-medium">
+              <nav className="hidden space-x-4 md:flex">
+                <Link href="/dashboard" className="font-medium text-gray-900">
                   Dashboard
                 </Link>
                 <Link
@@ -36,7 +37,7 @@ export default async function DashboardPage() {
               </nav>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600 hidden sm:inline">
+              <span className="hidden text-sm text-gray-600 sm:inline">
                 {session.user.email}
               </span>
               <LogoutButton />
@@ -105,11 +106,7 @@ export default async function DashboardPage() {
               >
                 View Full Profile
               </a>
-              {!session.user.isEmailVerified && (
-                <button className="block w-full rounded-md bg-yellow-600 px-4 py-2 text-center text-sm font-semibold text-white hover:bg-yellow-500">
-                  Verify Email
-                </button>
-              )}
+              {!session.user.isEmailVerified && <VerifyEmailButton fullWidth />}
             </div>
           </div>
 
@@ -130,7 +127,7 @@ export default async function DashboardPage() {
                 <p className="truncate font-mono text-xs text-gray-900">
                   {session.accessToken
                     ? `${session.accessToken.substring(0, 20)}...`
-                    : 'N/A'}
+                    : "N/A"}
                 </p>
               </div>
             </div>
@@ -138,5 +135,5 @@ export default async function DashboardPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

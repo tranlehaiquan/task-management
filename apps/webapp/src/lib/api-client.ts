@@ -2,7 +2,7 @@
  * API Client for communicating with the API Gateway
  */
 
-import { env } from '~/env'
+import { env } from "~/env";
 
 /**
  * User object returned from the API.
@@ -10,38 +10,38 @@ import { env } from '~/env'
  * Parse to Date objects at point of use if needed: new Date(user.createdAt)
  */
 export interface User {
-  id: string
-  email: string
-  name: string
-  avatarUrl: string | null
-  isActive: boolean
-  isEmailVerified: boolean
-  lastLoginAt: string | null
-  createdAt: string
-  updatedAt: string
+  id: string;
+  email: string;
+  name: string;
+  avatarUrl: string | null;
+  isActive: boolean;
+  isEmailVerified: boolean;
+  lastLoginAt: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface LoginResponse {
-  token: string
-  user: User
+  token: string;
+  user: User;
 }
 
 export interface RegisterResponse {
-  token: string
-  user: User
+  token: string;
+  user: User;
 }
 
 export interface ApiError {
-  message: string
-  statusCode: number
-  error?: string
+  message: string;
+  statusCode: number;
+  error?: string;
 }
 
 class ApiClient {
-  private baseUrl: string
+  private baseUrl: string;
 
   constructor() {
-    this.baseUrl = env.API_GATEWAY_URL
+    this.baseUrl = env.API_GATEWAY_URL;
   }
 
   /**
@@ -49,19 +49,21 @@ class ApiClient {
    */
   async login(email: string, password: string): Promise<LoginResponse> {
     const response = await fetch(`${this.baseUrl}/api/auth/login`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ email, password }),
-    })
+    });
 
     if (!response.ok) {
-      const error = (await response.json()) as ApiError
-      throw new Error(error.message || 'Login failed')
+      const error = (await response.json()) as ApiError;
+      throw new Error(error.message || "Login failed", {
+        cause: { server_message: error.error },
+      });
     }
 
-    return response.json() as Promise<LoginResponse>
+    return response.json() as Promise<LoginResponse>;
   }
 
   /**
@@ -73,19 +75,19 @@ class ApiClient {
     name: string,
   ): Promise<RegisterResponse> {
     const response = await fetch(`${this.baseUrl}/api/auth/register`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ email, password, name }),
-    })
+    });
 
     if (!response.ok) {
-      const error = (await response.json()) as ApiError
-      throw new Error(error.message || 'Registration failed')
+      const error = (await response.json()) as ApiError;
+      throw new Error(error.message || "Registration failed");
     }
 
-    return response.json() as Promise<RegisterResponse>
+    return response.json() as Promise<RegisterResponse>;
   }
 
   /**
@@ -93,19 +95,19 @@ class ApiClient {
    */
   async getCurrentUser(token: string): Promise<User> {
     const response = await fetch(`${this.baseUrl}/api/auth/me`, {
-      method: 'GET',
+      method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-    })
+    });
 
     if (!response.ok) {
-      const error = (await response.json()) as ApiError
-      throw new Error(error.message || 'Failed to get user')
+      const error = (await response.json()) as ApiError;
+      throw new Error(error.message || "Failed to get user");
     }
 
-    return response.json() as Promise<User>
+    return response.json() as Promise<User>;
   }
 
   /**
@@ -113,19 +115,19 @@ class ApiClient {
    */
   async sendVerificationEmail(token: string): Promise<{ success: boolean }> {
     const response = await fetch(`${this.baseUrl}/api/auth/verify-email`, {
-      method: 'POST',
+      method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-    })
+    });
 
     if (!response.ok) {
-      const error = (await response.json()) as ApiError
-      throw new Error(error.message || 'Failed to send verification email')
+      const error = (await response.json()) as ApiError;
+      throw new Error(error.message || "Failed to send verification email");
     }
 
-    return response.json() as Promise<{ success: boolean }>
+    return response.json() as Promise<{ success: boolean }>;
   }
 
   /**
@@ -137,20 +139,20 @@ class ApiClient {
     const response = await fetch(
       `${this.baseUrl}/api/auth/verify-email-token`,
       {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ token: verificationToken }),
       },
-    )
+    );
 
     if (!response.ok) {
-      const error = (await response.json()) as ApiError
-      throw new Error(error.message || 'Email verification failed')
+      const error = (await response.json()) as ApiError;
+      throw new Error(error.message || "Email verification failed");
     }
 
-    return response.json() as Promise<{ success: boolean; message: string }>
+    return response.json() as Promise<{ success: boolean; message: string }>;
   }
 
   /**
@@ -158,19 +160,19 @@ class ApiClient {
    */
   async forgotPassword(email: string): Promise<{ success: boolean }> {
     const response = await fetch(`${this.baseUrl}/api/auth/forgot-password`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ email }),
-    })
+    });
 
     if (!response.ok) {
-      const error = (await response.json()) as ApiError
-      throw new Error(error.message || 'Failed to send password reset email')
+      const error = (await response.json()) as ApiError;
+      throw new Error(error.message || "Failed to send password reset email");
     }
 
-    return response.json() as Promise<{ success: boolean }>
+    return response.json() as Promise<{ success: boolean }>;
   }
 
   /**
@@ -182,19 +184,19 @@ class ApiClient {
     const response = await fetch(
       `${this.baseUrl}/api/auth/validate-forgot-password-token?token=${encodeURIComponent(token)}`,
       {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       },
-    )
+    );
 
     if (!response.ok) {
-      const error = (await response.json()) as ApiError
-      throw new Error(error.message || 'Invalid or expired token')
+      const error = (await response.json()) as ApiError;
+      throw new Error(error.message || "Invalid or expired token");
     }
 
-    return response.json() as Promise<{ success: boolean }>
+    return response.json() as Promise<{ success: boolean }>;
   }
 
   /**
@@ -205,19 +207,19 @@ class ApiClient {
     password: string,
   ): Promise<{ success: boolean }> {
     const response = await fetch(`${this.baseUrl}/api/auth/reset-password`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ token, password }),
-    })
+    });
 
     if (!response.ok) {
-      const error = (await response.json()) as ApiError
-      throw new Error(error.message || 'Password reset failed')
+      const error = (await response.json()) as ApiError;
+      throw new Error(error.message || "Password reset failed");
     }
 
-    return response.json() as Promise<{ success: boolean }>
+    return response.json() as Promise<{ success: boolean }>;
   }
 
   /**
@@ -229,21 +231,21 @@ class ApiClient {
     newPassword: string,
   ): Promise<{ success: boolean }> {
     const response = await fetch(`${this.baseUrl}/api/auth/change-password`, {
-      method: 'POST',
+      method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({ oldPassword, newPassword }),
-    })
+    });
 
     if (!response.ok) {
-      const error = (await response.json()) as ApiError
-      throw new Error(error.message || 'Password change failed')
+      const error = (await response.json()) as ApiError;
+      throw new Error(error.message || "Password change failed");
     }
 
-    return response.json() as Promise<{ success: boolean }>
+    return response.json() as Promise<{ success: boolean }>;
   }
 }
 
-export const apiClient = new ApiClient()
+export const apiClient = new ApiClient();

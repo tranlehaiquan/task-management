@@ -1,6 +1,7 @@
 import { OnWorkerEvent, Processor, WorkerHost } from '@nestjs/bullmq';
 import type { Job } from 'bullmq';
 import { Logger, BadRequestException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { MailService } from '@task-mgmt/mail';
 import type { EmailJob } from '@task-mgmt/queue';
 import { EmailTemplates } from './templates/email.templates';
@@ -14,9 +15,20 @@ interface EmailContent {
 @Processor('email')
 export class EmailConsumer extends WorkerHost {
   private readonly logger = new Logger(EmailConsumer.name);
+  private readonly frontendUrl: string;
 
-  constructor(private readonly mailService: MailService) {
+  constructor(
+    private readonly mailService: MailService,
+    private readonly configService: ConfigService,
+  ) {
     super();
+    this.frontendUrl = this.configService.get<string>(
+      'FRONTEND_URL',
+      'http://localhost:4000',
+    );
+    this.logger.log(
+      `Email worker initialized with FRONTEND_URL: ${this.frontendUrl}`,
+    );
   }
 
   /**
@@ -43,9 +55,15 @@ export class EmailConsumer extends WorkerHost {
     // Template-based email (preferred approach)
     if (emailData.template && emailData.templateData) {
       try {
+        // Inject frontendUrl from environment into template data
+        const templateDataWithUrl = {
+          ...emailData.templateData,
+          frontendUrl: this.frontendUrl,
+        };
+
         return EmailTemplates.renderTemplate(
           emailData.template,
-          emailData.templateData,
+          templateDataWithUrl,
         );
       } catch (error) {
         this.logger.error(

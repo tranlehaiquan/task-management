@@ -84,6 +84,7 @@ export async function resetPassword(
   password: string,
 ): Promise<ResetPasswordResult> {
   try {
+    console.log(token, password);
     await apiClient.resetPassword(token, password);
     return { success: true };
   } catch (error) {

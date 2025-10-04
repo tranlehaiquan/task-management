@@ -15,7 +15,7 @@ export const passwordSchema = z
  */
 export const signUpSchema = z
   .object({
-    name: z.string().min(1, "Please enter your name").trim(),
+    name: z.string().trim().min(1, "Please enter your name"),
     email: z
       .string()
       .min(1, "Email is required")

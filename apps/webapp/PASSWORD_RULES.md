@@ -18,14 +18,14 @@ That's it! No complex requirements.
 ```typescript
 // Check minimum length
 if (password.length < 8) {
-  setError('Password must be at least 8 characters long')
-  return
+  setError("Password must be at least 8 characters long");
+  return;
 }
 
 // Check for at least one number
 if (!/\d/.test(password)) {
-  setError('Password must contain at least one number')
-  return
+  setError("Password must contain at least one number");
+  return;
 }
 ```
 
@@ -76,49 +76,55 @@ New simplified rules:
 
 ## Backend Validation
 
-**Important**: The API Gateway still enforces its own password rules.
+**Important**: The API Gateway and frontend now enforce the same comprehensive password rules.
 
 ### API Gateway Requirements
 
-Check `apps/api-gateway/src/auth/dto/register.dto.ts`:
+Check `apps/user-service/src/users/dto/createNewUser.dto.ts`:
 
 ```typescript
 @IsPasswordStrong()
 password: string;
 ```
 
-The backend may have different rules. If the backend requires stronger passwords, you should either:
+The backend validation decorator (`@IsPasswordStrong()`) in `packages/shared-utils/src/validation/password.validators.ts` enforces:
 
-1. **Update backend to match frontend** (recommended)
-2. **Update frontend to match backend**
-3. **Show backend errors to user**
+- 8-100 characters
+- At least one uppercase letter
+- At least one lowercase letter
+- At least one number
+- At least one special character (@$!%\*?&)
 
 ### Current Status
 
-The frontend now accepts:
+Both frontend and backend now require:
 
 - ✅ 8+ characters
+- ✅ At least one uppercase letter
+- ✅ At least one lowercase letter
 - ✅ At least one number
+- ✅ At least one special character (@$!%\*?&)
 
-If the API Gateway rejects the password, the error message will show:
-
-> "Password does not meet requirements. Use 8+ characters with at least one number."
+The validation is **consistent across the entire stack**!
 
 ## Error Messages
 
 ### Frontend Validation Errors
 
-| Condition             | Error Message                                 |
-| --------------------- | --------------------------------------------- |
-| < 8 characters        | "Password must be at least 8 characters long" |
-| No numbers            | "Password must contain at least one number"   |
-| Passwords don't match | "Passwords do not match"                      |
+| Condition             | Error Message                                                     |
+| --------------------- | ----------------------------------------------------------------- |
+| < 8 characters        | "Password must be at least 8 characters long"                     |
+| No uppercase letter   | "Password must contain at least one uppercase letter"             |
+| No lowercase letter   | "Password must contain at least one lowercase letter"             |
+| No numbers            | "Password must contain at least one number"                       |
+| No special character  | "Password must contain at least one special character (@$!%\*?&)" |
+| Passwords don't match | "Passwords do not match"                                          |
 
 ### Backend Validation Errors
 
-If the API Gateway has stricter rules, it will return an error, and the user will see:
+If validation fails on the backend, the error message will show:
 
-> "Password does not meet requirements. Use 8+ characters with at least one number."
+> "Password must contain: 8-100 characters, uppercase letter, lowercase letter, number, special character (@$!%\*?&)"
 
 ## Recommendations
 
@@ -148,71 +154,48 @@ Educate users to:
 
 ```typescript
 // Valid passwords
-test('mypassword1', true)
-test('helloworld99', true)
-test('test123456', true)
+test("Password123!", true); // All requirements met
+test("MyP@ss99", true); // All requirements met
+test("Hello$World1", true); // All requirements met
+test("Test@1234", true); // All requirements met
 
-// Invalid passwords
-test('short1', false) // Too short
-test('password', false) // No number
-test('abc123', false) // Too short
-test('longpassword', false) // No number
+// Invalid passwords - too short
+test("Short1!", false); // Only 7 characters
+
+// Invalid passwords - missing uppercase
+test("password123!", false); // No uppercase letter
+
+// Invalid passwords - missing lowercase
+test("PASSWORD123!", false); // No lowercase letter
+
+// Invalid passwords - missing number
+test("Password!", false); // No number
+
+// Invalid passwords - missing special character
+test("Password123", false); // No special character
+
+// Invalid passwords - wrong special character
+test("Password123#", false); // '#' is not in allowed set (@$!%*?&)
 ```
 
 ### Manual Testing
 
-1. Try password with 7 characters + number → Should fail
-2. Try password with 8 characters, no number → Should fail
-3. Try password with 8 characters + number → Should pass
-4. Try password with 20 characters + number → Should pass
+1. Try password with 7 characters + all requirements → Should fail (too short)
+2. Try password with 8 characters, no uppercase → Should fail
+3. Try password with 8 characters, no lowercase → Should fail
+4. Try password with 8 characters, no number → Should fail
+5. Try password with 8 characters, no special char → Should fail
+6. Try password with 8 characters + all requirements → Should pass
+7. Try password with 20 characters + all requirements → Should pass
 
 ## API Gateway Sync
 
-To sync the API Gateway validation with frontend:
+✅ **Already Synced!** The frontend and backend validations are now consistent.
 
-**File**: `apps/api-gateway/src/auth/dto/register.dto.ts`
+Both use the same rules defined in:
 
-Update the `@IsPasswordStrong()` decorator to match:
-
-```typescript
-import {
-  registerDecorator,
-  ValidationOptions,
-  ValidatorConstraint,
-  ValidatorConstraintInterface,
-} from 'class-validator'
-
-@ValidatorConstraint({ async: false })
-export class IsPasswordStrongConstraint
-  implements ValidatorConstraintInterface
-{
-  validate(password: string) {
-    // Min 8 characters
-    if (password.length < 8) return false
-
-    // At least one number
-    if (!/\d/.test(password)) return false
-
-    return true
-  }
-
-  defaultMessage() {
-    return 'Password must be at least 8 characters and contain at least one number'
-  }
-}
-
-export function IsPasswordStrong(validationOptions?: ValidationOptions) {
-  return function (object: object, propertyName: string) {
-    registerDecorator({
-      target: object.constructor,
-      propertyName: propertyName,
-      options: validationOptions,
-      constraints: [],
-      validator: IsPasswordStrongConstraint,
-    })
-  }
-}
-```
+- **Frontend**: `apps/webapp/src/lib/validations/auth.ts`
+- **Backend**: `packages/shared-utils/src/validation/password.validators.ts`
 
 ## Summary
 

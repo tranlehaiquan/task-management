@@ -1,13 +1,14 @@
-import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import { auth } from '~/server/auth'
-import { LogoutButton } from '~/components/logout-button'
+import { redirect } from "next/navigation";
+import Link from "next/link";
+import { auth } from "~/server/auth";
+import { LogoutButton } from "~/components/logout-button";
+import { VerifyEmailButton } from "~/components/verify-email-button";
 
 export default async function ProfilePage() {
-  const session = await auth()
+  const session = await auth();
 
   if (!session) {
-    redirect('/auth/signin')
+    redirect("/auth/signin");
   }
 
   return (
@@ -23,20 +24,20 @@ export default async function ProfilePage() {
               >
                 Task Management
               </Link>
-              <nav className="hidden md:flex space-x-4">
+              <nav className="hidden space-x-4 md:flex">
                 <Link
                   href="/dashboard"
                   className="text-gray-600 hover:text-gray-900"
                 >
                   Dashboard
                 </Link>
-                <Link href="/profile" className="text-gray-900 font-medium">
+                <Link href="/profile" className="font-medium text-gray-900">
                   Profile
                 </Link>
               </nav>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-600 hidden sm:inline">
+              <span className="hidden text-sm text-gray-600 sm:inline">
                 {session.user.email}
               </span>
               <LogoutButton />
@@ -119,9 +120,12 @@ export default async function ProfilePage() {
                       Verified
                     </span>
                   ) : (
-                    <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
-                      Not Verified
-                    </span>
+                    <div className="space-y-2">
+                      <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
+                        Not Verified
+                      </span>
+                      <VerifyEmailButton variant="primary" />
+                    </div>
                   )}
                 </dd>
               </div>
@@ -155,5 +159,5 @@ export default async function ProfilePage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

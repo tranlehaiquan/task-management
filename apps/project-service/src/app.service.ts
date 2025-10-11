@@ -605,7 +605,6 @@ export class AppService {
         text: `You are invited to join project ${project.name} with role ${role}`,
         template: 'project-invite',
         templateData: {
-          frontendUrl: process.env.FRONTEND_URL,
           projectName: project.name,
           projectRole: role,
           token,

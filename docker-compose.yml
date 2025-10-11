@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 services:
   mailpit:
@@ -20,7 +20,7 @@ services:
     image: redis:7-alpine
     container_name: task-manager-redis
     ports:
-      - '6379:6379'
+      - "6379:6379"
     volumes:
       - redis_data:/data
     restart: unless-stopped
@@ -46,6 +46,7 @@ services:
       - MAIL_PORT=1025
       - MAIL_USER=
       - MAIL_PASS=
+      - FRONTEND_URL=http://localhost:4000
       - NODE_ENV=development
     depends_on:
       - redis
@@ -70,7 +71,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     ports:
-      - '5432:5432'
+      - "5432:5432"
 
 volumes:
   data:

@@ -28,7 +28,7 @@
     "@nestjs/platform-express": "^11.1.6",
     "@task-mgmt/mail": "workspace:*",
     "@task-mgmt/queue": "workspace:*",
-    "bullmq": "^5.59.0",
+    "bullmq": "^5.60.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },

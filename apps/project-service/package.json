@@ -33,7 +33,7 @@
     "@task-mgmt/shared-utils": "workspace:*",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
-    "drizzle-orm": "^0.44.5",
+    "drizzle-orm": "^0.44.6",
     "neverthrow": "^8.2.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"

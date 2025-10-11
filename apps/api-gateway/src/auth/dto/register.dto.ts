@@ -12,9 +12,8 @@ export class RegisterDto {
   email: string;
 
   @ApiProperty({
-    description:
-      'User password (8-100 characters, uppercase, lowercase, number, special character)',
-    example: 'MySecure123!',
+    description: 'User password (8-100 characters with at least one number)',
+    example: 'password123',
     minLength: 8,
     maxLength: 100,
   })

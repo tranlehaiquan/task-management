@@ -136,7 +136,6 @@ export class UsersController {
         to: user.email,
         template: 'verification',
         templateData: {
-          frontendUrl: this.getFrontEndUrl(),
           token: emailVerificationTokenRecord.token,
           userName: user.name,
         },
@@ -214,7 +213,6 @@ export class UsersController {
         to: user.email,
         template: 'password-reset',
         templateData: {
-          frontendUrl: this.getFrontEndUrl(),
           token: passwordResetTokenRecord.token,
           userName: user.name,
         },
@@ -292,7 +290,6 @@ export class UsersController {
         to: user.email,
         template: 'welcome',
         templateData: {
-          frontendUrl: this.getFrontEndUrl(),
           userName: user.name,
         },
         jobType: 'welcome',
@@ -337,7 +334,6 @@ export class UsersController {
       jobType: 'welcome-invite',
       template: 'welcome-invite',
       templateData: {
-        frontendUrl: this.getFrontEndUrl(),
         password,
         userName: user.name,
       },

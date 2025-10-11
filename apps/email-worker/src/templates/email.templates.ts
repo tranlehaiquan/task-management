@@ -95,7 +95,7 @@ The Task Management Team`,
     token: string,
     userName?: string,
   ): EmailTemplate {
-    const resetUrl = `${frontendUrl}/reset-password/${token}`;
+    const resetUrl = `${frontendUrl}/auth/reset-password?token=${token}`;
     const greeting = userName ? `Hi ${userName},` : 'Hello,';
 
     return {
@@ -387,36 +387,56 @@ The Task Management Team`,
     > = {
       verification: (d) => {
         const { frontendUrl, token, userName } = d;
-        if (!frontendUrl || !token) {
+        if (!token) {
           throw new Error(
-            'Missing required templateData for verification email: frontendUrl, token',
+            'Missing required templateData for verification email: token',
+          );
+        }
+        if (!frontendUrl) {
+          throw new Error(
+            'Frontend URL not configured. Please set FRONTEND_URL environment variable in email worker.',
           );
         }
         return EmailTemplates.verificationEmail(frontendUrl, token, userName);
       },
       'password-reset': (d) => {
         const { frontendUrl, token, userName } = d;
-        if (!frontendUrl || !token) {
+        if (!token) {
           throw new Error(
-            'Missing required templateData for password-reset email: frontendUrl, token',
+            'Missing required templateData for password-reset email: token',
+          );
+        }
+        if (!frontendUrl) {
+          throw new Error(
+            'Frontend URL not configured. Please set FRONTEND_URL environment variable in email worker.',
           );
         }
         return EmailTemplates.passwordResetEmail(frontendUrl, token, userName);
       },
       welcome: (d) => {
         const { frontendUrl, userName } = d;
-        if (!frontendUrl || !userName) {
+        if (!userName) {
           throw new Error(
-            'Missing required templateData for welcome email: frontendUrl, userName',
+            'Missing required templateData for welcome email: userName',
+          );
+        }
+        if (!frontendUrl) {
+          throw new Error(
+            'Frontend URL not configured. Please set FRONTEND_URL environment variable in email worker.',
           );
         }
         return EmailTemplates.welcomeEmail(frontendUrl, userName);
       },
       'welcome-invite': (d) => {
         const { frontendUrl, userName, password } = d;
-        if (!frontendUrl || !userName || !password) {
+        if (!userName || !password) {
           throw new Error(
-            'Missing required templateData for welcome-invite email: frontendUrl, userName, password',
+            'Missing required templateData for welcome-invite email: userName, password',
+          );
+        }
+        if (!frontendUrl) {
+          throw new Error(
+            'Frontend URL not configured. Please set FRONTEND_URL environment variable in email worker.',
           );
         }
         return EmailTemplates.welcomeInviteEmail(
@@ -427,9 +447,14 @@ The Task Management Team`,
       },
       'project-invite': (d) => {
         const { frontendUrl, token, projectName, projectRole } = d;
-        if (!frontendUrl || !token || !projectName || !projectRole) {
+        if (!token || !projectName || !projectRole) {
           throw new Error(
-            'Missing required templateData for project-invite email: frontendUrl, token, projectName, projectRole',
+            'Missing required templateData for project-invite email: token, projectName, projectRole',
+          );
+        }
+        if (!frontendUrl) {
+          throw new Error(
+            'Frontend URL not configured. Please set FRONTEND_URL environment variable in email worker.',
           );
         }
         return EmailTemplates.projectInviteEmail(

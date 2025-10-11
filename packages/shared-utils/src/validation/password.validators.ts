@@ -115,12 +115,20 @@ export function IsStrongPassword(
  */
 
 /**
- * Strong password validation with all requirements (default)
+ * Strong password validation with simplified requirements
  * - 8-100 characters
- * - Uppercase, lowercase, number, special character
+ * - At least one number
  */
 export function IsPasswordStrong(validationOptions?: ValidationOptions) {
-  return IsStrongPassword({}, validationOptions);
+  return IsStrongPassword(
+    {
+      requireUppercase: false,
+      requireLowercase: false,
+      requireNumbers: true,
+      requireSpecialChars: false,
+    },
+    validationOptions,
+  );
 }
 
 /**
